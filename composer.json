@@ -1,0 +1,42 @@
+{
+    "name": "depage/discuss",
+    "description": "depage-discuss is a simple collection of forum/discussion classes.",
+    "version": "1.5.0",
+    "type": "library",
+    "keywords": [
+        "forum",
+        "discussion"
+    ],
+    "require": {
+        "depage/db": "dev-master",
+        "depage/entity": "dev-master",
+        "depage/htmlform": "dev-master",
+        "depage/notifications": "dev-master",
+        "depage/mail": "dev-master",
+        "php": " >= 5.3"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "*"
+    },
+    "autoload": {
+        "psr-4": { "Depage\\Discuss\\": "" }
+    },
+    "support": {
+        "email": "info@depage.net",
+        "source": "https://github.com/depage/depage-discuss",
+        "issues": "https://github.com/depage/depage-discuss/issues"
+
+    },
+    "time": "2017-03-20",
+    "license": [
+        "MIT",
+        "GPL-2.0"
+    ],
+    "authors": [
+        {
+            "name": "Frank Hellenkamp",
+            "homepage": "http://depage.net",
+            "role": "Developer"
+        }
+    ]
+}
