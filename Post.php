@@ -36,6 +36,16 @@ class Post extends \Depage\Entity\Entity
     static protected $primary = ["id"];
 
     /**
+     * @brief upvotes
+     **/
+    protected $upvotes = 0;
+
+    /**
+     * @brief downvotes
+     **/
+    protected $downvotes = 0;
+
+    /**
      * @brief pdo object for database access
      **/
     protected $pdo = null;
@@ -71,9 +81,14 @@ class Post extends \Depage\Entity\Entity
         ];
 
         $query = $pdo->prepare(
-            "SELECT $fields
+            "SELECT
+                $fields,
+                IFNULL(SUM(vote.upvote), 0) AS upvotes,
+                IFNULL(SUM(vote.downvote), 0) AS downvotes
             FROM
                 {$pdo->prefix}_discuss_posts AS post
+                LEFT JOIN {$pdo->prefix}_discuss_votes AS vote
+            ON post.id = vote.postId
             WHERE post.threadId = :threadId
             ORDER BY post.postDate ASC
             "
@@ -82,9 +97,9 @@ class Post extends \Depage\Entity\Entity
 
         // pass pdo-instance to constructor
         $query->setFetchMode(\PDO::FETCH_CLASS, get_called_class(), array($pdo));
-        $thread = $query->fetchAll();
+        $posts = $query->fetchAll();
 
-        return $thread;
+        return $posts;
 
     }
     // }}}
