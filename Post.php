@@ -28,8 +28,6 @@ class Post extends \Depage\Entity\Entity
         "post" => "",
         "postDate" => null,
         "editDate" => null,
-        "upvotes" => 0,
-        "downvotes" => 0,
     );
 
     /**
@@ -75,10 +73,10 @@ class Post extends \Depage\Entity\Entity
         $query = $pdo->prepare(
             "SELECT $fields
             FROM
-                {$pdo->prefix}_discuss_posts AS post,
-                {$pdo->prefix}_discuss_threads AS thread
-            WHERE thread.id = :threadId
-                AND post.threadId = thread.id"
+                {$pdo->prefix}_discuss_posts AS post
+            WHERE post.threadId = :threadId
+            ORDER BY post.postDate ASC
+            "
         );
         $query->execute($params);
 

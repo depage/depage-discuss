@@ -74,8 +74,7 @@ class Thread extends \Depage\Entity\Entity
         $query = $pdo->prepare(
             "SELECT $fields
             FROM
-                {$pdo->prefix}_discuss_threads AS thread,
-                {$pdo->prefix}_discuss_topics AS topics
+                {$pdo->prefix}_discuss_threads AS thread
             WHERE thread.topicId = :topicId
             ORDER BY thread.sticky"
         );
