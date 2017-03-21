@@ -14,8 +14,6 @@ CREATE TABLE `_discuss_posts` (
     `post` text NOT NULL,
     `postDate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     `editDate` timestamp NULL DEFAULT NULL,
-    `upvotes` smallint(2) unsigned NOT NULL DEFAULT '0',
-    `downvotes` smallint(2) unsigned NOT NULL DEFAULT '0',
     PRIMARY KEY (`id`),
     CONSTRAINT `_discuss_posts_ibfk_1` FOREIGN KEY (`threadId`) REFERENCES `_discuss_threads` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT `_discuss_posts_ibfk_2` FOREIGN KEY (`uid`) REFERENCES `_auth_user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
