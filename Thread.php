@@ -57,6 +57,54 @@ class Thread extends \Depage\Entity\Entity
     }
     // }}}
 
+    // {{{ loadByTopic()
+    /**
+     * @brief loadByTopic
+     *
+     * @param mixed $
+     * @return void
+     **/
+    public static function loadByTopic($pdo, $topicId)
+    {
+        $fields = "thread." . implode(", thread.", self::getFields());
+        $params = [
+            "topicId" => $topicId,
+        ];
+
+        $query = $pdo->prepare(
+            "SELECT $fields
+            FROM
+                {$pdo->prefix}_discuss_threads AS thread,
+                {$pdo->prefix}_discuss_topics AS topics
+            WHERE thread.topicId = :topicId
+            ORDER BY thread.sticky"
+        );
+        $query->execute($params);
+
+        // pass pdo-instance to constructor
+        $query->setFetchMode(\PDO::FETCH_CLASS, get_called_class(), array($pdo));
+        $thread = $query->fetchAll();
+
+        return $thread;
+
+    }
+    // }}}
+
+    // {{{ loadPosts()
+    /**
+     * @brief loadPosts
+     *
+     * @param mixed $
+     * @return void
+     **/
+    public function loadPosts($from, $to)
+    {
+        $posts = Post::loadByThread($this->pdo, $this->id, $from, $to);
+
+        return $posts;
+    }
+    // }}}
+
     // {{{ save()
     /**
      * save a notification object

@@ -94,6 +94,56 @@ class Topic extends \Depage\Entity\Entity
     }
     // }}}
 
+    // {{{ loadAllThreads()
+    /**
+     * @brief loadAllThreads
+     *
+     * @param mixed
+     * @return void
+     **/
+    public function loadAllThreads()
+    {
+        $threads = Thread::loadByTopic($this->pdo, $this->id);
+
+        return $threads;
+    }
+    // }}}
+    // {{{ loadThreadById()
+    /**
+     * @brief loadThreadById
+     *
+     * @param mixed $param
+     * @return void
+     **/
+    public function loadThreadById($id)
+    {
+        $thread = Thread::loadById($this->pdo, $id);
+
+        return $thread;
+    }
+    // }}}
+
+    // {{{ addThread()
+    /**
+     * @brief addThread
+     *
+     * @param mixed
+     * @return void
+     **/
+    public function addThread($subject, $post, $uid)
+    {
+        $thread = new Thread($this->pdo);
+        $thread->setData([
+            'subject' => $subject,
+            'topicId' => $this->id,
+            'post' => $post,
+            'uid' => $uid,
+        ])
+        ->save();
+
+    }
+    // }}}
+
     // {{{ save()
     /**
      * save a notification object

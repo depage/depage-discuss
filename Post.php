@@ -58,6 +58,39 @@ class Post extends \Depage\Entity\Entity
     }
     // }}}
 
+    // {{{ loadByThread()
+    /**
+     * @brief loadByThread
+     *
+     * @param mixed $
+     * @return void
+     **/
+    public static function loadByThread($pdo, $threadId, $from = null, $to = null)
+    {
+        $fields = "post." . implode(", post.", self::getFields());
+        $params = [
+            "threadId" => $threadId,
+        ];
+
+        $query = $pdo->prepare(
+            "SELECT $fields
+            FROM
+                {$pdo->prefix}_discuss_posts AS post,
+                {$pdo->prefix}_discuss_threads AS thread
+            WHERE thread.id = :threadId
+                AND post.threadId = thread.id"
+        );
+        $query->execute($params);
+
+        // pass pdo-instance to constructor
+        $query->setFetchMode(\PDO::FETCH_CLASS, get_called_class(), array($pdo));
+        $thread = $query->fetchAll();
+
+        return $thread;
+
+    }
+    // }}}
+
     // {{{ save()
     /**
      * save a notification object

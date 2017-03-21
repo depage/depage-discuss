@@ -9,7 +9,7 @@
 */
 CREATE TABLE `_discuss_threads` (
     `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-    `topicId` int(11) unsigned NOT NULL,
+    `topicId` int(11) unsigned DEFAULT NULL,
     `uid` int(11) unsigned NOT NULL,
     `subject` text NOT NULL,
     `post` text NOT NULL,
