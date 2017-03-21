@@ -26,7 +26,7 @@ class Discuss
      **/
     public function __construct($pdo)
     {
-
+        $this->pdo = $pdo;
     }
     // }}}
     // {{{ updateSchema()
@@ -49,28 +49,49 @@ class Discuss
     }
     // }}}
 
-    // {{{ loadThreads()
+    // {{{ loadAllTopics()
     /**
-     * @brief loadThreads
+     * @brief loadAllTopics
      *
-     * @param mixed $pdo
+     * @param mixed $
      * @return void
      **/
-    public static function loadThreads($pdo)
+    public function loadAllTopics()
     {
+        $topics = Topic::loadAll($this->pdo);
 
+        return $topics;
     }
     // }}}
-    // {{{ loadThreadById()
+    // {{{ loadTopicById()
     /**
-     * @brief loadThreadById
+     * @brief loadTopicById
      *
-     * @param mixed $pdo
+     * @param mixed
      * @return void
      **/
-    public static function loadThreadById($pdo)
+    public function loadTopicById($id)
     {
+        $topic = Topic::loadById($this->pdo, $id);
 
+        return $topic;
+    }
+    // }}}
+
+    // {{{ addTopic()
+    /**
+     * @brief addTopic
+     *
+     * @param mixed
+     * @return void
+     **/
+    public function addTopic($title, $description)
+    {
+        $topic = new Topic($this->pdo);
+        $topic->setData([
+            "title" => $title,
+            "description" => $description,
+        ])->save();
     }
     // }}}
 }

@@ -1,6 +1,6 @@
 <?php
 /**
- * @file    Thread.php
+ * @file    Post.php
  *
  * description
  *
@@ -12,10 +12,10 @@
 namespace Depage\Discuss;
 
 /**
- * @brief Thread
- * Class Thread
+ * @brief Post
+ * Class Post
  */
-class Thread extends \Depage\Entity\Entity
+class Post extends \Depage\Entity\Entity
 {
     // {{{ variables
     /**
@@ -23,12 +23,13 @@ class Thread extends \Depage\Entity\Entity
      **/
     static protected $fields = array(
         "id" => null,
-        "topicId" => null,
+        "threadId" => null,
         "uid" => null,
-        "subject" => "",
         "post" => "",
         "postDate" => null,
-        "sticky" => 0,
+        "editDate" => null,
+        "upvotes" => 0,
+        "downvotes" => 0,
     );
 
     /**
@@ -72,9 +73,9 @@ class Thread extends \Depage\Entity\Entity
 
         if (count($dirty) > 0) {
             if ($isNew) {
-                $query = "INSERT INTO {$this->pdo->prefix}_discuss_threads";
+                $query = "INSERT INTO {$this->pdo->prefix}_discuss_posts";
             } else {
-                $query = "UPDATE {$this->pdo->prefix}_discuss_threads";
+                $query = "UPDATE {$this->pdo->prefix}_discuss_posts";
             }
             foreach ($dirty as $key) {
                 $fields[] = "$key=:$key";

@@ -1,6 +1,6 @@
 <?php
 /**
- * @file    Thread.php
+ * @file    Topic.php
  *
  * description
  *
@@ -12,10 +12,10 @@
 namespace Depage\Discuss;
 
 /**
- * @brief Thread
- * Class Thread
+ * @brief Topic
+ * Class Topics
  */
-class Thread extends \Depage\Entity\Entity
+class Topic extends \Depage\Entity\Entity
 {
     // {{{ variables
     /**
@@ -23,12 +23,9 @@ class Thread extends \Depage\Entity\Entity
      **/
     static protected $fields = array(
         "id" => null,
-        "topicId" => null,
-        "uid" => null,
-        "subject" => "",
-        "post" => "",
-        "postDate" => null,
-        "sticky" => 0,
+        "title" => "",
+        "description" => "",
+        "pos" => 0,
     );
 
     /**
@@ -57,6 +54,46 @@ class Thread extends \Depage\Entity\Entity
     }
     // }}}
 
+    // {{{ loadAll()
+    /**
+     * @brief loadAll
+     *
+     * @param mixed $
+     * @return void
+     **/
+    public static function loadAll($pdo)
+    {
+        $fields = "t." . implode(", t.", self::getFields());
+        $params = [];
+
+        $query = $pdo->prepare(
+            "SELECT $fields
+            FROM
+                {$pdo->prefix}_discuss_topics AS t
+            ORDER BY t.pos"
+        );
+        $query->execute($params);
+
+        // pass pdo-instance to constructor
+        $query->setFetchMode(\PDO::FETCH_CLASS, get_called_class(), array($pdo));
+        $n = $query->fetchAll();
+
+        return $n;
+    }
+    // }}}
+    // {{{ loadById()
+    /**
+     * @brief loadById
+     *
+     * @param mixed $
+     * @return void
+     **/
+    public static function loadById($pdo, $id)
+    {
+
+    }
+    // }}}
+
     // {{{ save()
     /**
      * save a notification object
@@ -72,9 +109,9 @@ class Thread extends \Depage\Entity\Entity
 
         if (count($dirty) > 0) {
             if ($isNew) {
-                $query = "INSERT INTO {$this->pdo->prefix}_discuss_threads";
+                $query = "INSERT INTO {$this->pdo->prefix}_discuss_topics";
             } else {
-                $query = "UPDATE {$this->pdo->prefix}_discuss_threads";
+                $query = "UPDATE {$this->pdo->prefix}_discuss_topics";
             }
             foreach ($dirty as $key) {
                 $fields[] = "$key=:$key";
