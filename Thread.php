@@ -88,6 +88,37 @@ class Thread extends \Depage\Entity\Entity
 
     }
     // }}}
+    // {{{ loadById()
+    /**
+     * @brief loadById
+     *
+     * @param mixed $
+     * @return void
+     **/
+    public static function loadById($pdo, $threadId)
+    {
+        $fields = "thread." . implode(", thread.", self::getFields());
+        $params = [
+            "threadId" => $threadId,
+        ];
+
+        $query = $pdo->prepare(
+            "SELECT $fields
+            FROM
+                {$pdo->prefix}_discuss_threads AS thread
+            WHERE thread.id = :threadId
+            ORDER BY thread.sticky"
+        );
+        $query->execute($params);
+
+        // pass pdo-instance to constructor
+        $query->setFetchMode(\PDO::FETCH_CLASS, get_called_class(), array($pdo));
+        $thread = $query->fetch();
+
+        return $thread;
+
+    }
+    // }}}
 
     // {{{ loadPosts()
     /**
@@ -121,6 +152,24 @@ class Thread extends \Depage\Entity\Entity
         ->save();
 
         return $post;
+    }
+    // }}}
+
+    // {{{ getLink()
+    /**
+     * @brief getLink
+     *
+     * @param mixed
+     * @return void
+     **/
+    public function getLink()
+    {
+        $link = "?" . http_build_query([
+            'action' => "posts",
+            'thread' => $this->id,
+        ]);
+
+        return $link;
     }
     // }}}
 

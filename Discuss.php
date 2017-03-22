@@ -90,6 +90,20 @@ class Discuss
         return $topic;
     }
     // }}}
+    // {{{ loadThreadById()
+    /**
+     * @brief loadThreadById
+     *
+     * @param mixed
+     * @return void
+     **/
+    public function loadThreadById($id)
+    {
+        $thread = Thread::loadById($this->pdo, $id);
+
+        return $thread;
+    }
+    // }}}
 
     // {{{ addTopic()
     /**
@@ -98,11 +112,11 @@ class Discuss
      * @param mixed
      * @return void
      **/
-    public function addTopic($title, $description)
+    public function addTopic($subject, $description)
     {
         $topic = new Topic($this->pdo);
         $topic->setData([
-            "title" => $title,
+            "subject" => $subject,
             "description" => $description,
         ])->save();
     }
@@ -124,6 +138,8 @@ class Discuss
             $this->html = $this->renderAllTopics();
         } else if ($action == "threads") {
             $this->html = $this->renderTopic($_GET['topic']);
+        } else if ($action == "posts") {
+            $this->html = $this->renderThread($_GET['thread']);
         }
     }
     // }}}
@@ -139,8 +155,7 @@ class Discuss
     {
         $topics = $this->loadAllTopics();
 
-        var_dump($topics);
-        $html = new Html("Topics.tpl", array(
+        $html = new Html("Overview.tpl", array(
             'topics' => $topics,
             'user' => null,
         ), $this->htmlOptions);
@@ -158,10 +173,36 @@ class Discuss
     public function renderTopic($topicId)
     {
         $topic = $this->loadTopicById($topicId);
+        $threads = $topic->loadAllThreads();
 
-        var_dump($topic);
+        $html = new Html("Topic.tpl", array(
+            'topic' => $topic,
+            'threads' => $threads,
+            'user' => null,
+        ), $this->htmlOptions);
 
-        return "";
+        return $html;
+    }
+    // }}}
+    // {{{ renderThread()
+    /**
+     * @brief renderThread
+     *
+     * @param mixed $threatId
+     * @return void
+     **/
+    public function renderThread($threatId)
+    {
+        $thread = $this->loadThreadById($threatId);
+        $posts = $thread->loadPosts(0, 100);
+
+        $html = new Html("Thread.tpl", array(
+            'thread' => $thread,
+            'posts' => $posts,
+            'user' => null,
+        ), $this->htmlOptions);
+
+        return $html;
     }
     // }}}
 

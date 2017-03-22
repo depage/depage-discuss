@@ -23,7 +23,7 @@ class Topic extends \Depage\Entity\Entity
      **/
     static protected $fields = array(
         "id" => null,
-        "title" => "",
+        "subject" => "",
         "description" => "",
         "pos" => 0,
     );
@@ -90,6 +90,25 @@ class Topic extends \Depage\Entity\Entity
      **/
     public static function loadById($pdo, $id)
     {
+        $fields = "t." . implode(", t.", self::getFields());
+        $params = [
+            "id" => $id,
+        ];
+
+        $query = $pdo->prepare(
+            "SELECT $fields
+            FROM
+                {$pdo->prefix}_discuss_topics AS t
+            WHERE t.id = :id
+            "
+        );
+        $query->execute($params);
+
+        // pass pdo-instance to constructor
+        $query->setFetchMode(\PDO::FETCH_CLASS, get_called_class(), array($pdo));
+        $n = $query->fetch();
+
+        return $n;
 
     }
     // }}}
@@ -141,6 +160,23 @@ class Topic extends \Depage\Entity\Entity
         ])
         ->save();
 
+    }
+    // }}}
+    // {{{ getLink()
+    /**
+     * @brief getLink
+     *
+     * @param mixed
+     * @return void
+     **/
+    public function getLink()
+    {
+        $link = "?" . http_build_query([
+            'action' => "threads",
+            'topic' => $this->id,
+        ]);
+
+        return $link;
     }
     // }}}
 
