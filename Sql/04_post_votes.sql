@@ -18,3 +18,12 @@ CREATE TABLE `_discuss_votes` (
     CONSTRAINT `_discuss_votes_ibfk_2` FOREIGN KEY (`uid`) REFERENCES `_auth_user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
 
+/*
+    @version 1.5.6.1
+*/
+ALTER TABLE `_discuss_votes` ADD UNIQUE (postId, uid);
+
+/*
+    @version 1.5.6.2
+*/
+ALTER TABLE `_discuss_votes` DROP COLUMN id;

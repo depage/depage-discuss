@@ -104,6 +104,94 @@ class Post extends \Depage\Entity\Entity
     }
     // }}}
 
+    // {{{ voteUp()
+    /**
+     * @brief voteUp
+     *
+     * @param mixed $uid
+     * @return void
+     **/
+    public function voteUp($uid)
+    {
+        return $this->vote($uid, 1);
+
+    }
+    // }}}
+    // {{{ voteDown()
+    /**
+     * @brief voteDown
+     *
+     * @param mixed $uid
+     * @return void
+     **/
+    public function voteDown($uid)
+    {
+        return $this->vote($uid, -1);
+    }
+    // }}}
+    // {{{ voteReset()
+    /**
+     * @brief voteReset
+     *
+     * @param mixed $uid
+     * @return void
+     **/
+    public function voteReset($uid)
+    {
+        return $this->vote($uid, 0);
+    }
+    // }}}
+    // {{{ vote()
+    /**
+     * @brief vote
+     *
+     * @param mixed $uid, $count
+     * @return void
+     **/
+    protected function vote($uid, $count)
+    {
+        if ($count > 0) {
+            $upvote = 1;
+            $downvote = 0;
+        } else if ($count < 0) {
+            $upvote = 0;
+            $downvote = 1;
+        } else {
+            $upvote = 0;
+            $downvote = 0;
+        }
+
+        $query = $this->pdo->prepare("
+            REPLACE INTO {$this->pdo->prefix}_discuss_votes
+                (postId, uid, upvote, downvote) VALUES (:postId, :uid, :upvote, :downvote);
+        ");
+        $query->execute([
+            "postId" => $this->id,
+            "uid" => $uid,
+            "upvote" => $upvote,
+            "downvote" => $downvote,
+        ]);
+
+        // updated current votes in object
+        $query = $this->pdo->prepare(
+            "SELECT
+                IFNULL(SUM(vote.upvote), 0) AS upvotes,
+                IFNULL(SUM(vote.downvote), 0) AS downvotes
+            FROM
+                {$this->pdo->prefix}_discuss_votes AS vote
+            WHERE vote.postId = :postId
+            "
+        );
+        $query->execute([
+            "postId" => $this->id,
+        ]);
+
+        $vote = $query->fetchObject();
+        $this->upvotes = $vote->upvotes;
+        $this->downvotes = $vote->downvotes;
+    }
+    // }}}
+
     // {{{ save()
     /**
      * save a notification object
