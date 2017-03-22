@@ -10,6 +10,7 @@
     "require": {
         "depage/db": "dev-master",
         "depage/entity": "dev-master",
+        "depage/html": "dev-master",
         "depage/htmlform": "dev-master",
         "depage/notifications": "dev-master",
         "depage/mail": "dev-master",
