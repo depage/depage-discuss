@@ -103,6 +103,26 @@ class Thread extends \Depage\Entity\Entity
         return $posts;
     }
     // }}}
+    // {{{ addPost()
+    /**
+     * @brief addPost
+     *
+     * @param mixed
+     * @return void
+     **/
+    public function addPost($post, $uid)
+    {
+        $thread = new Post($this->pdo);
+        $thread->setData([
+            'threadId' => $this->id,
+            'post' => $post,
+            'uid' => $uid,
+        ])
+        ->save();
+
+        return $post;
+    }
+    // }}}
 
     // {{{ save()
     /**

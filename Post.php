@@ -90,6 +90,7 @@ class Post extends \Depage\Entity\Entity
                 LEFT JOIN {$pdo->prefix}_discuss_votes AS vote
             ON post.id = vote.postId
             WHERE post.threadId = :threadId
+            GROUP BY post.id
             ORDER BY post.postDate ASC
             "
         );
@@ -114,7 +115,6 @@ class Post extends \Depage\Entity\Entity
     public function voteUp($uid)
     {
         return $this->vote($uid, 1);
-
     }
     // }}}
     // {{{ voteDown()
@@ -150,6 +150,10 @@ class Post extends \Depage\Entity\Entity
      **/
     protected function vote($uid, $direction)
     {
+        if ($this->uid == $uid) {
+            // users themselves cannot vote on their posts
+            return $this;
+        }
         if ($direction > 0) {
             $upvote = 1;
             $downvote = 0;
@@ -189,6 +193,8 @@ class Post extends \Depage\Entity\Entity
         $vote = $query->fetchObject();
         $this->upvotes = $vote->upvotes;
         $this->downvotes = $vote->downvotes;
+
+        return $this;
     }
     // }}}
 
