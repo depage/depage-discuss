@@ -145,15 +145,15 @@ class Post extends \Depage\Entity\Entity
     /**
      * @brief vote
      *
-     * @param mixed $uid, $count
+     * @param mixed $uid, $direction
      * @return void
      **/
-    protected function vote($uid, $count)
+    protected function vote($uid, $direction)
     {
-        if ($count > 0) {
+        if ($direction > 0) {
             $upvote = 1;
             $downvote = 0;
-        } else if ($count < 0) {
+        } else if ($direction < 0) {
             $upvote = 0;
             $downvote = 1;
         } else {
