@@ -1,4 +1,9 @@
 <div class="discuss">
+    <?php if (!empty($this->topic)) { ?>
+        <header>
+            <a href="<?php self::t($this->topic->getLink()); ?>"><?php self::t($this->topic->subject); ?></a>
+        </header>
+    <?php } ?>
     <h1><a href="<?php self::t($this->thread->getLink()); ?>"><?php self::t($this->thread->subject); ?></a></h1>
     <article class="thread">
         <div class="content">

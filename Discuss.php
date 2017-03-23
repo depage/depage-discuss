@@ -183,6 +183,8 @@ class Discuss
             $topic->addThread($values['subject'], (string) $values['post'], $uid);
 
             $form->clearSession();
+
+            // @todo redirect to topic after creation
         }
 
         $threads = $topic->loadAllThreads();
@@ -227,8 +229,10 @@ class Discuss
         }
 
         $posts = $thread->loadPosts(0, 100);
+        $topic = $thread->getTopic();
 
         $html = new Html("Thread.tpl", [
+            'topic' => $topic,
             'thread' => $thread,
             'posts' => $posts,
             'user' => null,

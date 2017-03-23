@@ -105,6 +105,41 @@ class Post extends \Depage\Entity\Entity
     }
     // }}}
 
+    // {{{ setThread()
+    /**
+     * @brief setThread
+     *
+     * @param mixed $thread
+     * @return void
+     **/
+    public function setThread($thread)
+    {
+        if ($this->data['threadId'] == null) {
+            $this->threadId = $thread->id;
+            $this->thread = $thread;
+        } else if ($this->data['threadId'] == $thread->id) {
+            $this->thread = $thread;
+        }
+
+        return $this;
+    }
+    // }}}
+    // {{{ getTopic()
+    /**
+     * @brief getTopic
+     *
+     * @param mixed
+     * @return void
+     **/
+    public function getTopic()
+    {
+        if (empty($this->topic) && $this->data['topicId'] !== null) {
+            $this->topic = Topic::loadById($this->pdo, $this->data['topicId']);
+        }
+        return $this->topic;
+    }
+    // }}}
+
     // {{{ voteUp()
     /**
      * @brief voteUp
@@ -198,6 +233,51 @@ class Post extends \Depage\Entity\Entity
     }
     // }}}
 
+    // {{{ notify()
+    /**
+     * @brief notify
+     *
+     * @param mixed $isNew
+     * @return void
+     **/
+    public function notify($isNew)
+    {
+        if ($isNew) {
+            $mentions = $this->getMentions();
+            foreach($mentions as $username) {
+                try {
+                    $user = \Depage\Auth\User::loadByUsername($this->pdo, $username);
+                    // @todo notify user
+                } catch (\Exception $e) {
+                }
+            }
+        }
+    }
+    // }}}
+    // {{{ getMentions()
+    /**
+     * @brief getMentions
+     *
+     * @param mixed
+     * @return void
+     **/
+    public function getMentions()
+    {
+        $users = [];
+        $text = strip_tags($this->post);
+
+        $count = preg_match_all("/@([a-z0-9]+)/i", $text, $matches);
+
+        if ($count > 0) {
+            foreach($matches[1] as $username) {
+                $users[$username] = true;
+            }
+        }
+
+        return array_keys($users);
+    }
+    // }}}
+
     // {{{ save()
     /**
      * save a notification object
@@ -239,6 +319,8 @@ class Post extends \Depage\Entity\Entity
             if ($success) {
                 $this->dirty = array_fill_keys(array_keys(static::$fields), false);
             }
+
+            $this->notify($isNew);
         }
     }
     // }}}

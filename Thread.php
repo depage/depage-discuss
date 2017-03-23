@@ -37,6 +37,11 @@ class Thread extends \Depage\Entity\Entity
     static protected $primary = ["id"];
 
     /**
+     * @brief topic
+     **/
+    protected $topic = null;
+
+    /**
      * @brief pdo object for database access
      **/
     protected $pdo = null;
@@ -131,6 +136,10 @@ class Thread extends \Depage\Entity\Entity
     {
         $posts = Post::loadByThread($this->pdo, $this->id, $from, $to);
 
+        foreach ($posts as $post){
+            $post->setThread($this);
+        }
+
         return $posts;
     }
     // }}}
@@ -145,13 +154,48 @@ class Thread extends \Depage\Entity\Entity
     {
         $thread = new Post($this->pdo);
         $thread->setData([
-            'threadId' => $this->id,
             'post' => $post,
             'uid' => $uid,
         ])
+        ->setThread($this)
         ->save();
 
         return $post;
+    }
+    // }}}
+
+    // {{{ setTopic()
+    /**
+     * @brief setTopic
+     *
+     * @param mixed $topic
+     * @return void
+     **/
+    public function setTopic($topic)
+    {
+        if ($this->data['topicId'] == null) {
+            $this->topicId = $topic->id;
+            $this->topic = $topic;
+        } else if ($this->data['topicId'] == $topic->id) {
+            $this->topic = $topic;
+        }
+
+        return $this;
+    }
+    // }}}
+    // {{{ getTopic()
+    /**
+     * @brief getTopic
+     *
+     * @param mixed
+     * @return void
+     **/
+    public function getTopic()
+    {
+        if (empty($this->topic) && $this->data['topicId'] !== null) {
+            $this->topic = Topic::loadById($this->pdo, $this->data['topicId']);
+        }
+        return $this->topic;
     }
     // }}}
 

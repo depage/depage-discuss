@@ -124,6 +124,10 @@ class Topic extends \Depage\Entity\Entity
     {
         $threads = Thread::loadByTopic($this->pdo, $this->id);
 
+        foreach ($threads as $thread) {
+            $thread->setTopic($this);
+        }
+
         return $threads;
     }
     // }}}
@@ -137,6 +141,8 @@ class Topic extends \Depage\Entity\Entity
     public function loadThreadById($id)
     {
         $thread = Thread::loadById($this->pdo, $id);
+
+        $thread->setTopic($this);
 
         return $thread;
     }
@@ -154,12 +160,11 @@ class Topic extends \Depage\Entity\Entity
         $thread = new Thread($this->pdo);
         $thread->setData([
             'subject' => $subject,
-            'topicId' => $this->id,
             'post' => $post,
             'uid' => $uid,
         ])
+        ->setTopic($this)
         ->save();
-
     }
     // }}}
     // {{{ getLink()
