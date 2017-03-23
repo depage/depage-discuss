@@ -12,8 +12,8 @@
         "depage/entity": "dev-master",
         "depage/html": "dev-master",
         "depage/htmlform": "dev-master",
-        "depage/notifications": "dev-master",
         "depage/mail": "dev-master",
+        "depage/notifications": "dev-master",
         "php": " >= 5.3"
     },
     "require-dev": {

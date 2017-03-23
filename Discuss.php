@@ -35,11 +35,10 @@ class Discuss
     public function __construct($pdo)
     {
         $this->pdo = $pdo;
-        $this->htmlOptions = array(
+        $this->htmlOptions = [
             'template_path' => __DIR__ . "/Tpl/",
             'clean' => "space",
-        );
-
+        ];
     }
     // }}}
     // {{{ updateSchema()
@@ -155,10 +154,10 @@ class Discuss
     {
         $topics = $this->loadAllTopics();
 
-        $html = new Html("Overview.tpl", array(
+        $html = new Html("Overview.tpl", [
             'topics' => $topics,
             'user' => null,
-        ), $this->htmlOptions);
+        ], $this->htmlOptions);
 
         return $html;
     }
@@ -173,13 +172,27 @@ class Discuss
     public function renderTopic($topicId)
     {
         $topic = $this->loadTopicById($topicId);
+        $form = new Forms\Thread("new-thread-$topicId", [
+        ]);
+        $form->process();
+
+        if ($form->validate()) {
+            $values = $form->getValues();
+
+            $uid = 1;
+            $topic->addThread($values['subject'], (string) $values['post'], $uid);
+
+            $form->clearSession();
+        }
+
         $threads = $topic->loadAllThreads();
 
-        $html = new Html("Topic.tpl", array(
+        $html = new Html("Topic.tpl", [
             'topic' => $topic,
             'threads' => $threads,
             'user' => null,
-        ), $this->htmlOptions);
+            'threadForm' => $form,
+        ], $this->htmlOptions);
 
         return $html;
     }
@@ -191,18 +204,60 @@ class Discuss
      * @param mixed $threatId
      * @return void
      **/
-    public function renderThread($threatId)
+    public function renderThread($threadId)
     {
-        $thread = $this->loadThreadById($threatId);
+        $thread = $this->loadThreadById($threadId);
+
+        // @todo just temporary
+        if (!empty($_POST['post'])) {
+            $_POST['post'] = "<p>" . str_replace("\n", "</p><p>", $_POST['post']) . "</p>";
+        }
+
+        $form = new Forms\Post("new-post-$threadId", [
+        ]);
+        $form->process();
+
+        if ($form->validate()) {
+            $values = $form->getValues();
+
+            $uid = 1;
+            $thread->addPost((string) $values['post'], $uid);
+
+            $form->clearSession();
+        }
+
         $posts = $thread->loadPosts(0, 100);
 
-        $html = new Html("Thread.tpl", array(
+        $html = new Html("Thread.tpl", [
             'thread' => $thread,
             'posts' => $posts,
             'user' => null,
-        ), $this->htmlOptions);
+            'renderUserInfo' => [$this, 'renderUserInfo'],
+            'postForm' => $form,
+        ], $this->htmlOptions);
 
         return $html;
+    }
+    // }}}
+    // {{{ renderUserInfo()
+    /**
+     * @brief renderUserInfo
+     *
+     * @param mixed $uid
+     * @return void
+     **/
+    public function renderUserInfo($uid)
+    {
+        $user = \Depage\Auth\User::loadById($uid);
+
+        $html = new Html([
+            'topic' => $topic,
+            'threads' => $threads,
+            'user' => null,
+        ], $this->htmlOptions);
+
+        return $html;
+
     }
     // }}}
 
