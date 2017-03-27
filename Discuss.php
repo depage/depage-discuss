@@ -103,6 +103,20 @@ class Discuss
         return $thread;
     }
     // }}}
+    // {{{ loadPostById()
+    /**
+     * @brief loadPostById
+     *
+     * @param mixed
+     * @return void
+     **/
+    public function loadPostById($id)
+    {
+        $post = Post::loadById($this->pdo, $id);
+
+        return $post;
+    }
+    // }}}
 
     // {{{ addTopic()
     /**
@@ -133,7 +147,17 @@ class Discuss
         // @todo add better router
         $action = !empty($_GET['action']) ? $_GET['action'] : "";
 
-        if ($action == "" || $action == "topics") {
+        if (!empty($_POST["post"]) && !empty($_POST["vote"])) {
+            $post = $this->loadPostById($_POST["post"]);
+
+            $post->vote(3, $_POST['vote']);
+            echo(json_encode([
+                'post' => $post->id,
+                'upvotes' => $post->getUpvotes(),
+                'downvotes' => $post->getDownvotes(),
+            ]));
+            die();
+        } else if ($action == "" || $action == "topics") {
             $this->html = $this->renderAllTopics();
         } else if ($action == "threads") {
             $this->html = $this->renderTopic($_GET['topic']);

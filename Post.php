@@ -72,6 +72,8 @@ class Post extends \Depage\Entity\Entity
      *
      * @param mixed $
      * @return void
+     *
+     * @todo add order by votes
      **/
     public static function loadByThread($pdo, $threadId, $from = null, $to = null)
     {
@@ -101,6 +103,46 @@ class Post extends \Depage\Entity\Entity
         $posts = $query->fetchAll();
 
         return $posts;
+
+    }
+    // }}}
+    // {{{ loadById()
+    /**
+     * @brief loadById
+     *
+     * @param mixed $
+     * @return void
+     *
+     * @todo add order by votes
+     **/
+    public static function loadById($pdo, $postId)
+    {
+        $fields = "post." . implode(", post.", self::getFields());
+        $params = [
+            "postId" => $postId,
+        ];
+
+        $query = $pdo->prepare(
+            "SELECT
+                $fields,
+                IFNULL(SUM(vote.upvote), 0) AS upvotes,
+                IFNULL(SUM(vote.downvote), 0) AS downvotes
+            FROM
+                {$pdo->prefix}_discuss_posts AS post
+                LEFT JOIN {$pdo->prefix}_discuss_votes AS vote
+            ON post.id = vote.postId
+            WHERE post.id = :postId
+            GROUP BY post.id
+            ORDER BY post.postDate ASC
+            "
+        );
+        $query->execute($params);
+
+        // pass pdo-instance to constructor
+        $query->setFetchMode(\PDO::FETCH_CLASS, get_called_class(), array($pdo));
+        $post = $query->fetch();
+
+        return $post;
 
     }
     // }}}
@@ -183,7 +225,7 @@ class Post extends \Depage\Entity\Entity
      * @param mixed $uid, $direction
      * @return void
      **/
-    protected function vote($uid, $direction)
+    public function vote($uid, $direction)
     {
         if ($this->uid == $uid) {
             // users themselves cannot vote on their posts
@@ -230,6 +272,47 @@ class Post extends \Depage\Entity\Entity
         $this->downvotes = $vote->downvotes;
 
         return $this;
+    }
+    // }}}
+
+    // {{{ getVotes()
+    /**
+     * @brief getVotes
+     *
+     * @param mixed $param
+     * @return void
+     **/
+    public function getVotes()
+    {
+        $votes = $this->upvotes - $this->downvotes;
+
+        return (int) $votes;
+    }
+    // }}}
+    // {{{ getUpvotes()
+    /**
+     * @brief getUpvotes
+     *
+     * @param mixed $param
+     * @return void
+     **/
+    public function getUpvotes()
+    {
+        return (int) $this->upvotes;
+
+    }
+    // }}}
+    // {{{ getDownvotes()
+    /**
+     * @brief getDownvotes
+     *
+     * @param mixed $param
+     * @return void
+     **/
+    public function getDownvotes()
+    {
+        return (int) -1 * $this->downvotes;
+
     }
     // }}}
 

@@ -19,7 +19,10 @@
         </div>
 
         <?php foreach ($this->posts as $post) { ?>
-            <article class="post">
+            <article <?php self::attr([
+                "class" => "post",
+                "data-discuss-post" => $post->id,
+            ]) ?>>
                 <header>
                     <a class="profile-image" href="#">
                         <img src="" alt="@username">
@@ -29,6 +32,13 @@
                     <time><?php self::t(self::formatDateNatural($post->postDate, true)); ?></time>
                 </header>
                 <?php self::e($post->post); ?>
+                <footer>
+                    <div class="votes">
+                        <span class="sum"><?php self::t($post->getVotes()); ?></span>
+                        (<span class="up"><?php self::t($post->getUpvotes()); ?></span> /
+                        <span class="down"><?php self::t($post->getDownvotes()); ?></span>)
+                    </div>
+                </footer>
             </article>
         <?php } ?>
     </article>
