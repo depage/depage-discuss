@@ -151,6 +151,7 @@ class Topic extends \Depage\Entity\Entity
      **/
     public function addThread($subject, $post, $uid)
     {
+
         $thread = new Thread($this->pdo);
         $thread->setData([
             'subject' => $subject,
@@ -171,7 +172,8 @@ class Topic extends \Depage\Entity\Entity
      **/
     public function getLink()
     {
-        $link = "?" . http_build_query([
+        $base = parse_url($_SERVER['REQUEST_URI'], \PHP_URL_PATH);
+        $link =  "$base?" . http_build_query([
             'action' => "threads",
             'topic' => $this->id,
         ]);

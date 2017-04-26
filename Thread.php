@@ -28,6 +28,8 @@ class Thread extends \Depage\Entity\Entity
         "subject" => "",
         "post" => "",
         "postDate" => null,
+        "editDate" => null,
+        "lastPostDate" => null,
         "sticky" => 0,
     );
 
@@ -76,7 +78,7 @@ class Thread extends \Depage\Entity\Entity
             FROM
                 {$pdo->prefix}_discuss_threads AS thread
             WHERE thread.topicId = :topicId
-            ORDER BY thread.sticky"
+            ORDER BY thread.sticky DESC, thread.lastPostDate DESC"
         );
         $query->execute($params);
 
@@ -155,6 +157,24 @@ class Thread extends \Depage\Entity\Entity
     }
     // }}}
 
+    // {{{ setPost()
+    /**
+     * @brief setPost
+     *
+     * @param mixed $post
+     * @return void
+     **/
+    public function setPost($post)
+    {
+        if (!empty($post) && substr($post, 0, 1) !== "<") {
+            $post = "<p>" . str_replace("\n", "</p><p>", $post) . "</p>";
+        }
+
+        $this->data['post'] = $post;
+        $this->dirty['post'] = true;
+    }
+    // }}}
+
     // {{{ getLink()
     /**
      * @brief getLink
@@ -164,7 +184,8 @@ class Thread extends \Depage\Entity\Entity
      **/
     public function getLink()
     {
-        $link = "?" . http_build_query([
+        $base = parse_url($_SERVER['REQUEST_URI'], \PHP_URL_PATH);
+        $link =  "$base?" . http_build_query([
             'action' => "posts",
             'thread' => $this->id,
         ]);

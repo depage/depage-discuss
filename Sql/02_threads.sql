@@ -25,3 +25,8 @@ CREATE TABLE `_discuss_threads` (
     @version 1.5.6.1
 */
 ALTER TABLE `_discuss_threads` ADD COLUMN `editDate` timestamp NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP AFTER `postDate`;
+
+/*
+    @version 1.5.6.2
+*/
+ALTER TABLE `_discuss_threads` ADD COLUMN `lastPostDate` timestamp NULL DEFAULT CURRENT_TIMESTAMP AFTER `editDate`;

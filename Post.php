@@ -105,6 +105,24 @@ class Post extends \Depage\Entity\Entity
     }
     // }}}
 
+    // {{{ setPost()
+    /**
+     * @brief setPost
+     *
+     * @param mixed $post
+     * @return void
+     **/
+    public function setPost($post)
+    {
+        if (!empty($post) && substr($post, 0, 1) !== "<") {
+            $post = "<p>" . str_replace("\n", "</p><p>", $post) . "</p>";
+        }
+
+        $this->data['post'] = $post;
+        $this->dirty['post'] = true;
+    }
+    // }}}
+
     // {{{ voteUp()
     /**
      * @brief voteUp
@@ -234,6 +252,11 @@ class Post extends \Depage\Entity\Entity
 
             if ($isNew) {
                 $this->data[$primary] = $this->pdo->lastInsertId();
+
+                $cmd = $this->pdo->prepare("UPDATE {$this->pdo->prefix}_discuss_threads SET lastPostDate=NOW() WHERE id = :threadId");
+                $cmd->execute([
+                    'threadId' => $this->threadId,
+                ]);
             }
 
             if ($success) {
