@@ -5,7 +5,7 @@
             <?php foreach ($this->topics as $topic) {
             ?>
                 <li class="teaser">
-                    <h1><a href="<?php self::t($topic->getLink()); ?>"><?php self::t($topic->subject); ?></a></h1>
+                    <h1><a href="<?php self::t($this->discuss->getLinkTo($topic)); ?>"><?php self::t($topic->subject); ?></a></h1>
                     <p><?php self::t($topic->description); ?></p>
                 </li>
             <?php } ?>

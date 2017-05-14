@@ -161,24 +161,7 @@ class Topic extends \Depage\Entity\Entity
         ])
         ->save();
 
-    }
-    // }}}
-    // {{{ getLink()
-    /**
-     * @brief getLink
-     *
-     * @param mixed
-     * @return void
-     **/
-    public function getLink()
-    {
-        $base = parse_url($_SERVER['REQUEST_URI'], \PHP_URL_PATH);
-        $link =  "$base?" . http_build_query([
-            'action' => "threads",
-            'topic' => $this->id,
-        ]);
-
-        return $link;
+        return $thread;
     }
     // }}}
 

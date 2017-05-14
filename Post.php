@@ -104,6 +104,18 @@ class Post extends \Depage\Entity\Entity
 
     }
     // }}}
+    // {{{ loadThread()
+    /**
+     * @brief loadThread
+     *
+     * @param mixed
+     * @return void
+     **/
+    public function loadThread()
+    {
+        return Thread::loadById($this->pdo, $this->threadId);
+    }
+    // }}}
 
     // {{{ setPost()
     /**
@@ -253,7 +265,7 @@ class Post extends \Depage\Entity\Entity
             if ($isNew) {
                 $this->data[$primary] = $this->pdo->lastInsertId();
 
-                $cmd = $this->pdo->prepare("UPDATE {$this->pdo->prefix}_discuss_threads SET lastPostDate=NOW() WHERE id = :threadId");
+                $cmd = $this->pdo->prepare("UPDATE {$this->pdo->prefix}_discuss_threads SET lastPostDate=NOW(), editDate=editDate WHERE id = :threadId");
                 $cmd->execute([
                     'threadId' => $this->threadId,
                 ]);

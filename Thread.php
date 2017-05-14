@@ -143,12 +143,12 @@ class Thread extends \Depage\Entity\Entity
      * @param mixed
      * @return void
      **/
-    public function addPost($post, $uid)
+    public function addPost($text, $uid)
     {
-        $thread = new Post($this->pdo);
-        $thread->setData([
+        $post = new Post($this->pdo);
+        $post->setData([
             'threadId' => $this->id,
-            'post' => $post,
+            'post' => $text,
             'uid' => $uid,
         ])
         ->save();
@@ -172,25 +172,6 @@ class Thread extends \Depage\Entity\Entity
 
         $this->data['post'] = $post;
         $this->dirty['post'] = true;
-    }
-    // }}}
-
-    // {{{ getLink()
-    /**
-     * @brief getLink
-     *
-     * @param mixed
-     * @return void
-     **/
-    public function getLink()
-    {
-        $base = parse_url($_SERVER['REQUEST_URI'], \PHP_URL_PATH);
-        $link =  "$base?" . http_build_query([
-            'action' => "posts",
-            'thread' => $this->id,
-        ]);
-
-        return $link;
     }
     // }}}
 

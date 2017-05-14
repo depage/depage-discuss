@@ -25,6 +25,16 @@ class Discuss
      **/
     protected $html = "";
 
+    /**
+     * @brief user
+     **/
+    protected $user = null;
+
+    /**
+     * @brief baseUrl
+     **/
+    protected $baseUrl = "";
+
     // {{{ __construct()
     /**
      * @brief __construct
@@ -39,6 +49,7 @@ class Discuss
             'template_path' => __DIR__ . "/Tpl/",
             'clean' => "space",
         ];
+        $this->baseUrl = parse_url($_SERVER['REQUEST_URI'], \PHP_URL_PATH);
     }
     // }}}
     // {{{ updateSchema()
@@ -58,6 +69,14 @@ class Discuss
             })
             ->loadGlob(__DIR__ . "/Sql/*.sql")
             ->update();
+    }
+    // }}}
+
+    // {{{ redirect
+    public static function redirect($url)
+    {
+        header('Location: ' . $url);
+        die( "Tried to redirect you to <a href=\"$url\">$url</a>");
     }
     // }}}
 
@@ -130,16 +149,113 @@ class Discuss
      **/
     public function process()
     {
-        // @todo add better router
         $action = !empty($_GET['action']) ? $_GET['action'] : "";
 
         if ($action == "" || $action == "topics") {
             $this->html = $this->renderAllTopics();
-        } else if ($action == "threads") {
-            $this->html = $this->renderTopic($_GET['topic']);
-        } else if ($action == "posts") {
-            $this->html = $this->renderThread($_GET['thread']);
+        } else if ($action == "topic") {
+            $this->html = $this->renderTopic($_GET['id']);
+        } else if ($action == "thread") {
+            $this->html = $this->renderThread($_GET['id']);
         }
+    }
+    // }}}
+
+    // {{{ getLinkTo()
+    /**
+     * @brief getLinkTo
+     *
+     * @param mixed
+     * @return void
+     **/
+    public function getLinkTo($object)
+    {
+        $action = "";
+        $hash = "";
+        if ($object instanceof Topic) {
+            $action = "topic";
+            $id = $object->id;
+        } else if ($object instanceof Thread) {
+            $action = "thread";
+            $id = $object->id;
+        } else if ($object instanceof Post) {
+            $action = "thread";
+            $id = $object->threadId;
+            $hash = "#post-{$object->id}";
+        } else {
+            return "";
+        }
+
+        $link =  "{$this->baseUrl}?" . http_build_query([
+            'action' => $action,
+            'id' => $id,
+        ]) . $hash;
+
+        return $link;
+    }
+    // }}}
+    // {{{ getProfileImage()
+    /**
+     * @brief getProfileImage
+     *
+     * @param mixed $
+     * @return void
+     **/
+    public function getProfileImage($user)
+    {
+        return $user->getProfileImage();
+    }
+    // }}}
+    // {{{ getLoginMessage()
+    /**
+     * @brief getLoginMessage
+     *
+     * @param mixed
+     * @return void
+     **/
+    public function getLoginMessage()
+    {
+        return "";
+    }
+    // }}}
+    // {{{ getCurrentUser()
+    /**
+     * @brief getCurrentUser
+     *
+     * @param mixed
+     * @return void
+     **/
+    public function getCurrentUser()
+    {
+        return $this->user;
+    }
+    // }}}
+    // {{{ setCurrentUser()
+    /**
+     * @brief setCurrentUser
+     *
+     * @param mixed $user
+     * @return void
+     **/
+    public function setCurrentUser($user)
+    {
+        $this->user = $user;
+
+        return $this;
+    }
+    // }}}
+    // {{{ setBaseUrl()
+    /**
+     * @brief setBaseUrl
+     *
+     * @param mixed $url
+     * @return void
+     **/
+    public function setBaseUrl($url)
+    {
+        $this->baseUrl = $url;
+
+        return $this;
     }
     // }}}
 
@@ -155,8 +271,9 @@ class Discuss
         $topics = $this->loadAllTopics();
 
         $html = new Html("Overview.tpl", [
+            'discuss' => $this,
             'topics' => $topics,
-            'user' => null,
+            'user' => $this->getCurrentUser(),
         ], $this->htmlOptions);
 
         return $html;
@@ -172,25 +289,31 @@ class Discuss
     public function renderTopic($topicId)
     {
         $topic = $this->loadTopicById($topicId);
-        $form = new Forms\Thread("new-thread-$topicId", [
-        ]);
-        $form->process();
 
-        if ($form->validate()) {
-            $values = $form->getValues();
+        if (!empty($this->user)) {
+            $form = new Forms\Thread("new-thread-$topicId", [
+            ]);
+            $form->process();
 
-            $uid = 1;
-            $topic->addThread($values['subject'], (string) $values['post'], $uid);
+            if ($form->validate()) {
+                $values = $form->getValues();
 
-            $form->clearSession();
+                $thread = $topic->addThread($values['subject'], (string) $values['post'], $this->user->id);
+
+                $form->clearSession();
+
+                self::redirect($this->getLinkTo($thread));
+            }
+        } else {
+            $form = $this->getLoginMessage();
         }
-
         $threads = $topic->loadAllThreads();
 
         $html = new Html("Topic.tpl", [
+            'discuss' => $this,
             'topic' => $topic,
             'threads' => $threads,
-            'user' => null,
+            'user' => $this->getCurrentUser(),
             'threadForm' => $form,
         ], $this->htmlOptions);
 
@@ -208,31 +331,30 @@ class Discuss
     {
         $thread = $this->loadThreadById($threadId);
 
-        // @todo just temporary
-        if (!empty($_POST['post'])) {
-            $_POST['post'] = "<p>" . str_replace("\n", "</p><p>", $_POST['post']) . "</p>";
+        if (!empty($this->user)) {
+            $form = new Forms\Post("new-post-$threadId");
+            $form->process();
+
+            if ($form->validate()) {
+                $values = $form->getValues();
+
+                $post = $thread->addPost((string) $values['post'], $this->user->id);
+
+                $form->clearSession();
+
+                self::redirect($this->getLinkTo($post));
+            }
+        } else {
+            $form = $this->getLoginMessage();
         }
 
-        $form = new Forms\Post("new-post-$threadId", [
-        ]);
-        $form->process();
-
-        if ($form->validate()) {
-            $values = $form->getValues();
-
-            $uid = 1;
-            $thread->addPost((string) $values['post'], $uid);
-
-            $form->clearSession();
-        }
-
-        $posts = $thread->loadPosts(0, 100);
+        $posts = $thread->loadPosts(0, 400);
 
         $html = new Html("Thread.tpl", [
+            'discuss' => $this,
             'thread' => $thread,
             'posts' => $posts,
-            'user' => null,
-            'renderUserInfo' => [$this, 'renderUserInfo'],
+            'user' => $this->getCurrentUser(),
             'postForm' => $form,
         ], $this->htmlOptions);
 
@@ -248,16 +370,14 @@ class Discuss
      **/
     public function renderUserInfo($uid)
     {
-        $user = \Depage\Auth\User::loadById($uid);
+        $user = \Depage\Auth\User::loadById($this->pdo, $uid);
 
-        $html = new Html([
-            'topic' => $topic,
-            'threads' => $threads,
-            'user' => null,
+        $html = new Html('UserInfo.tpl', [
+            'discuss' => $this,
+            'user' => $user,
         ], $this->htmlOptions);
 
-        return $html;
-
+        echo($html);
     }
     // }}}
 
