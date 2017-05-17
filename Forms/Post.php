@@ -17,6 +17,21 @@ namespace Depage\Discuss\Forms;
  */
 class Post extends \Depage\HtmlForm\HtmlForm
 {
+    // {{{ __construct()
+    /**
+     * @brief __construct
+     *
+     * @param mixed $name, $params = []
+     * @return void
+     **/
+    public function __construct($name, $params = [])
+    {
+        $params['class'] = "new-post";
+
+        parent::__construct($name, $params);
+
+    }
+    // }}}
     // {{{ addChildElements()
     /**
      * @brief addChildElements
@@ -35,6 +50,7 @@ class Post extends \Depage\HtmlForm\HtmlForm
                 "ul",
                 "ol",
                 "li",
+                "blockquote",
                 "a",
                 "b",
                 "strong",

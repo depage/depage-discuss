@@ -104,6 +104,43 @@ class Post extends \Depage\Entity\Entity
 
     }
     // }}}
+    // {{{ loadById()
+    /**
+     * @brief loadById
+     *
+     * @param mixed $
+     * @return void
+     **/
+    public static function loadById($pdo, $postId)
+    {
+        $fields = "post." . implode(", post.", self::getFields());
+        $params = [
+            "postId" => $postId,
+        ];
+
+        $query = $pdo->prepare(
+            "SELECT
+                $fields,
+                IFNULL(SUM(vote.upvote), 0) AS upvotes,
+                IFNULL(SUM(vote.downvote), 0) AS downvotes
+            FROM
+                {$pdo->prefix}_discuss_posts AS post
+                LEFT JOIN {$pdo->prefix}_discuss_votes AS vote
+            ON post.id = vote.postId
+            WHERE post.id = :postId
+            GROUP BY post.id
+            "
+        );
+        $query->execute($params);
+
+        // pass pdo-instance to constructor
+        $query->setFetchMode(\PDO::FETCH_CLASS, get_called_class(), array($pdo));
+        $post = $query->fetch();
+
+        return $post;
+
+    }
+    // }}}
     // {{{ loadThread()
     /**
      * @brief loadThread
@@ -132,6 +169,30 @@ class Post extends \Depage\Entity\Entity
 
         $this->data['post'] = $post;
         $this->dirty['post'] = true;
+    }
+    // }}}
+
+    // {{{ getUpvotes()
+    /**
+     * @brief getUpvotes
+     *
+     * @return void
+     **/
+    public function getUpvotes()
+    {
+        return $this->upvotes;
+
+    }
+    // }}}
+    // {{{ getDownvotes()
+    /**
+     * @brief getDownvotes
+     *
+     * @return void
+     **/
+    public function getDownvotes()
+    {
+        return $this->downvotes;
     }
     // }}}
 
@@ -178,12 +239,13 @@ class Post extends \Depage\Entity\Entity
      * @param mixed $uid, $direction
      * @return void
      **/
-    protected function vote($uid, $direction)
+    public function vote($uid, $direction)
     {
         if ($this->uid == $uid) {
             // users themselves cannot vote on their posts
             return $this;
         }
+        $direction = (int) $direction;
         if ($direction > 0) {
             $upvote = 1;
             $downvote = 0;

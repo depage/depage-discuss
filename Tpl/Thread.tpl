@@ -9,16 +9,32 @@
             <?php self::e($this->thread->post); ?>
         </div>
 
-        <?php foreach ($this->posts as $post) { ?>
+        <?php foreach ($this->posts as $post) {
+            $upvotes = $post->getUpvotes();
+            $downvotes = $post->getDownvotes();
+            $sum = $upvotes - $downvotes;
+        ?>
             <article <?php self::attr([
                 'class' => "post",
                 'id' => "post-{$post->id}",
+                'data-discuss-post-id' => $post->id,
             ]) ?>>
                 <header>
                     <?php $this->discuss->renderUserInfo($post->uid); ?>
                     <time><?php self::t(self::formatDateNatural($post->postDate, true)); ?></time>
                 </header>
-                <?php self::e($post->post); ?>
+                <div class="content">
+                    <?php self::e($post->post); ?>
+                </div>
+                <footer>
+                    <?php if(!empty($this->user)) { ?>
+                        <div class="votes">
+                            <span class="sum"><?php self::t($sum); ?></span>
+                            <span class="up"><?php self::t($upvotes); ?></span>
+                            <span class="down"><?php self::t($downvotes); ?></span>
+                        </div>
+                    <?php } ?>
+                </footer>
             </article>
         <?php } ?>
     </article>

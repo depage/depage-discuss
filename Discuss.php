@@ -160,6 +160,30 @@ class Discuss
         }
     }
     // }}}
+    // {{{ processVote()
+    /**
+     * @brief processVote
+     *
+     * @return void
+     **/
+    public function processVote()
+    {
+        if (!empty($this->user) && !empty($_POST['post']) && !empty($_POST['vote'])) {
+            $post = Post::loadById($this->pdo, $_POST['post']);
+
+            $post->vote($this->user->id, $_POST['vote']);
+
+            $result = [
+                'uid' => $this->user->id,
+                'post' => $post->id,
+                'upvotes' => $post->upvotes,
+                'downvotes' => $post->downvotes,
+            ];
+            echo(json_encode($result, \JSON_NUMERIC_CHECK));
+            die();
+        }
+    }
+    // }}}
 
     // {{{ getLinkTo()
     /**
@@ -331,7 +355,9 @@ class Discuss
     {
         $thread = $this->loadThreadById($threadId);
 
-        if (!empty($this->user)) {
+    if (!empty($this->user)) {
+            $this->processVote();
+
             $form = new Forms\Post("new-post-$threadId");
             $form->process();
 
