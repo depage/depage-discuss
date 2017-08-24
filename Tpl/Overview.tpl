@@ -1,4 +1,4 @@
-<div class="discuss">
+<section class="discuss">
     <h1>Topics</h1>
     <nav class="list topics">
         <ul>
@@ -11,5 +11,5 @@
             <?php } ?>
         </ul>
     </nav>
-</div>
+</section>
 <?php // vim:set ft=php sw=4 sts=4 fdm=marker et :

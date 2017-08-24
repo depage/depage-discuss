@@ -1,4 +1,4 @@
-<div class="discuss">
+<section class="discuss">
     <h1><a href="<?php self::t($this->discuss->getLinkTo($thread)); ?>"><?php self::t($this->thread->subject); ?></a></h1>
     <article class="thread">
         <div class="content">
@@ -39,6 +39,6 @@
         <?php } ?>
     </article>
     <?php self::e($this->postForm); ?>
-</div>
+</section>
 
 <?php // vim:set ft=php sw=4 sts=4 fdm=marker et :

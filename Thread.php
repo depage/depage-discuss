@@ -17,6 +17,8 @@ namespace Depage\Discuss;
  */
 class Thread extends \Depage\Entity\Entity
 {
+    use Traits\Votes;
+
     // {{{ variables
     /**
      * @brief fields
@@ -37,6 +39,11 @@ class Thread extends \Depage\Entity\Entity
      * @brief primary
      **/
     static protected $primary = ["id"];
+
+    /**
+     * @brief voteTable
+     **/
+    static protected $voteTable = "_discuss_thread_votes";
 
     /**
      * @brief pdo object for database access
@@ -105,10 +112,16 @@ class Thread extends \Depage\Entity\Entity
         ];
 
         $query = $pdo->prepare(
-            "SELECT $fields
+            "SELECT
+                $fields,
+                IFNULL(SUM(vote.upvote), 0) AS upvotes,
+                IFNULL(SUM(vote.downvote), 0) AS downvotes
             FROM
                 {$pdo->prefix}_discuss_threads AS thread
+                LEFT JOIN {$pdo->prefix}" . self::$voteTable . " AS vote
+            ON thread.id = vote.id
             WHERE thread.id = :threadId
+            GROUP BY thread.id
             ORDER BY thread.sticky"
         );
         $query->execute($params);

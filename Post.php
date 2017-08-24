@@ -17,6 +17,8 @@ namespace Depage\Discuss;
  */
 class Post extends \Depage\Entity\Entity
 {
+    use Traits\Votes;
+
     // {{{ variables
     /**
      * @brief fields
@@ -36,14 +38,9 @@ class Post extends \Depage\Entity\Entity
     static protected $primary = ["id"];
 
     /**
-     * @brief upvotes
+     * @brief voteTable
      **/
-    protected $upvotes = 0;
-
-    /**
-     * @brief downvotes
-     **/
-    protected $downvotes = 0;
+    static protected $voteTable = "_discuss_post_votes";
 
     /**
      * @brief pdo object for database access
@@ -87,8 +84,8 @@ class Post extends \Depage\Entity\Entity
                 IFNULL(SUM(vote.downvote), 0) AS downvotes
             FROM
                 {$pdo->prefix}_discuss_posts AS post
-                LEFT JOIN {$pdo->prefix}_discuss_votes AS vote
-            ON post.id = vote.postId
+                LEFT JOIN {$pdo->prefix}" . self::$voteTable . " AS vote
+            ON post.id = vote.id
             WHERE post.threadId = :threadId
             GROUP BY post.id
             ORDER BY post.postDate ASC
@@ -125,7 +122,7 @@ class Post extends \Depage\Entity\Entity
                 IFNULL(SUM(vote.downvote), 0) AS downvotes
             FROM
                 {$pdo->prefix}_discuss_posts AS post
-                LEFT JOIN {$pdo->prefix}_discuss_votes AS vote
+                LEFT JOIN {$pdo->prefix}" . self::$voteTable . " AS vote
             ON post.id = vote.postId
             WHERE post.id = :postId
             GROUP BY post.id
@@ -169,124 +166,6 @@ class Post extends \Depage\Entity\Entity
 
         $this->data['post'] = $post;
         $this->dirty['post'] = true;
-    }
-    // }}}
-
-    // {{{ getUpvotes()
-    /**
-     * @brief getUpvotes
-     *
-     * @return void
-     **/
-    public function getUpvotes()
-    {
-        return $this->upvotes;
-
-    }
-    // }}}
-    // {{{ getDownvotes()
-    /**
-     * @brief getDownvotes
-     *
-     * @return void
-     **/
-    public function getDownvotes()
-    {
-        return $this->downvotes;
-    }
-    // }}}
-
-    // {{{ voteUp()
-    /**
-     * @brief voteUp
-     *
-     * @param mixed $uid
-     * @return void
-     **/
-    public function voteUp($uid)
-    {
-        return $this->vote($uid, 1);
-    }
-    // }}}
-    // {{{ voteDown()
-    /**
-     * @brief voteDown
-     *
-     * @param mixed $uid
-     * @return void
-     **/
-    public function voteDown($uid)
-    {
-        return $this->vote($uid, -1);
-    }
-    // }}}
-    // {{{ voteReset()
-    /**
-     * @brief voteReset
-     *
-     * @param mixed $uid
-     * @return void
-     **/
-    public function voteReset($uid)
-    {
-        return $this->vote($uid, 0);
-    }
-    // }}}
-    // {{{ vote()
-    /**
-     * @brief vote
-     *
-     * @param mixed $uid, $direction
-     * @return void
-     **/
-    public function vote($uid, $direction)
-    {
-        if ($this->uid == $uid) {
-            // users themselves cannot vote on their posts
-            return $this;
-        }
-        $direction = (int) $direction;
-        if ($direction > 0) {
-            $upvote = 1;
-            $downvote = 0;
-        } else if ($direction < 0) {
-            $upvote = 0;
-            $downvote = 1;
-        } else {
-            $upvote = 0;
-            $downvote = 0;
-        }
-
-        $query = $this->pdo->prepare("
-            REPLACE INTO {$this->pdo->prefix}_discuss_votes
-                (postId, uid, upvote, downvote) VALUES (:postId, :uid, :upvote, :downvote);
-        ");
-        $query->execute([
-            "postId" => $this->id,
-            "uid" => $uid,
-            "upvote" => $upvote,
-            "downvote" => $downvote,
-        ]);
-
-        // updated current votes in object
-        $query = $this->pdo->prepare(
-            "SELECT
-                IFNULL(SUM(vote.upvote), 0) AS upvotes,
-                IFNULL(SUM(vote.downvote), 0) AS downvotes
-            FROM
-                {$this->pdo->prefix}_discuss_votes AS vote
-            WHERE vote.postId = :postId
-            "
-        );
-        $query->execute([
-            "postId" => $this->id,
-        ]);
-
-        $vote = $query->fetchObject();
-        $this->upvotes = $vote->upvotes;
-        $this->downvotes = $vote->downvotes;
-
-        return $this;
     }
     // }}}
 

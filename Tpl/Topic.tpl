@@ -1,4 +1,4 @@
-<div class="discuss">
+<section class="discuss">
     <h1>Threads</h1>
     <nav class="list threads">
         <ul>
@@ -12,7 +12,7 @@
         </ul>
     </nav>
     <?php self::e($this->threadForm); ?>
-</div>
+</section>
 
 <?php // vim:set ft=php sw=4 sts=4 fdm=marker et :
 

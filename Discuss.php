@@ -355,7 +355,7 @@ class Discuss
     {
         $thread = $this->loadThreadById($threadId);
 
-    if (!empty($this->user)) {
+        if (!empty($this->user)) {
             $this->processVote();
 
             $form = new Forms\Post("new-post-$threadId");
