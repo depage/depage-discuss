@@ -1,12 +1,33 @@
 <section class="discuss">
     <h1><a href="<?php self::t($this->discuss->getLinkTo($thread)); ?>"><?php self::t($this->thread->subject); ?></a></h1>
-    <article class="thread">
-        <div class="content">
+    <article <?php self::attr([
+        'class' => "thread",
+    ]); ?>>
+        <div <?php self::attr([
+            'class' => "main",
+            'data-discuss-id' => "thread-{$this->thread->id}",
+        ]); ?>>
+            <?php
+                $upvotes = $this->thread->getUpvotes();
+                $downvotes = $this->thread->getDownvotes();
+                $sum = $upvotes - $downvotes;
+            ?>
             <header>
                 <?php $this->discuss->renderUserInfo($this->thread->uid); ?>
                 <time><?php self::t(self::formatDateNatural($this->thread->postDate, true)); ?></time>
             </header>
-            <?php self::e($this->thread->post); ?>
+            <div class="content">
+                <?php self::e($this->thread->post); ?>
+            </div>
+            <footer>
+                <?php if(!empty($this->user)) { ?>
+                    <div class="votes">
+                        <span class="sum"><?php self::t($sum); ?></span>
+                        <span class="up"><?php self::t($upvotes); ?></span>
+                        <span class="down"><?php self::t($downvotes); ?></span>
+                    </div>
+                <?php } ?>
+            </footer>
         </div>
 
         <?php foreach ($this->posts as $post) {
@@ -17,7 +38,7 @@
             <article <?php self::attr([
                 'class' => "post",
                 'id' => "post-{$post->id}",
-                'data-discuss-post-id' => $post->id,
+                'data-discuss-id' => "post-{$post->id}",
             ]) ?>>
                 <header>
                     <?php $this->discuss->renderUserInfo($post->uid); ?>
