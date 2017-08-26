@@ -160,38 +160,6 @@ class Discuss
         }
     }
     // }}}
-    // {{{ processVote()
-    /**
-     * @brief processVote
-     *
-     * @return void
-     **/
-    public function processVote()
-    {
-        if (!empty($this->user) && !empty($_POST['id']) && !empty($_POST['vote'])) {
-            list($type, $id) = explode("-", $_POST['id']);
-
-            if ($type == "post") {
-                $el = Post::loadById($this->pdo, $id);
-            } else if ($type == "thread") {
-                $el = Thread::loadById($this->pdo, $id);
-            } else {
-                die();
-            }
-
-            $el->vote($this->user->id, $_POST['vote']);
-
-            $result = [
-                'uid' => $this->user->id,
-                'id' => "{$type}-{$el->id}",
-                'upvotes' => $el->upvotes,
-                'downvotes' => $el->downvotes,
-            ];
-            echo(json_encode($result, \JSON_NUMERIC_CHECK));
-            die();
-        }
-    }
-    // }}}
 
     // {{{ getLinkTo()
     /**
@@ -364,7 +332,7 @@ class Discuss
         $thread = $this->loadThreadById($threadId);
 
         if (!empty($this->user)) {
-            $this->processVote();
+            $thread->processVote($this->user);
 
             $form = new Forms\Post("new-post-$threadId");
             $form->process();

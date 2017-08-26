@@ -4,7 +4,7 @@
         'class' => "thread",
     ]); ?>>
         <div <?php self::attr([
-            'class' => "main",
+            'class' => "body",
             'data-discuss-id' => "thread-{$this->thread->id}",
         ]); ?>>
             <?php

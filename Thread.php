@@ -237,6 +237,39 @@ class Thread extends \Depage\Entity\Entity
         }
     }
     // }}}
+
+    // {{{ processVote()
+    /**
+     * @brief processVote
+     *
+     * @return void
+     **/
+    public function processVote(\Depage\Auth\User $user)
+    {
+        if (!empty($user) && !empty($_POST['action']) && $_POST['action'] == "changeVote" && !empty($_POST['id']) && !empty($_POST['vote'])) {
+            list($type, $id) = explode("-", $_POST['id']);
+
+            if ($type == "post") {
+                $el = Post::loadById($this->pdo, $id);
+            } else if ($type == "thread" && $this->id == $id) {
+                $el = $this;
+            } else {
+                die();
+            }
+
+            $el->vote($user->id, $_POST['vote']);
+
+            $result = [
+                'uid' => $user->id,
+                'id' => "{$type}-{$el->id}",
+                'upvotes' => $el->upvotes,
+                'downvotes' => $el->downvotes,
+            ];
+            echo(json_encode($result, \JSON_NUMERIC_CHECK));
+            die();
+        }
+    }
+    // }}}
 }
 
 // vim:set ft=php sw=4 sts=4 fdm=marker et :
