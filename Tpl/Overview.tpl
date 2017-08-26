@@ -3,6 +3,7 @@
     <nav class="list topics">
         <ul>
             <?php foreach ($this->topics as $topic) {
+                if (!$topic->visible) continue;
             ?>
                 <li class="teaser">
                     <h1><a href="<?php self::t($this->discuss->getLinkTo($topic)); ?>"><?php self::t($topic->subject); ?></a></h1>

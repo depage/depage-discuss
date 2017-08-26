@@ -31,6 +31,8 @@
         </div>
 
         <?php foreach ($this->posts as $post) {
+            if (!$post->visible) continue;
+
             $upvotes = $post->getUpvotes();
             $downvotes = $post->getDownvotes();
             $sum = $upvotes - $downvotes;

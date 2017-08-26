@@ -30,6 +30,7 @@ class Post extends \Depage\Entity\Entity
         "post" => "",
         "postDate" => null,
         "editDate" => null,
+        "visible" => 1,
     );
 
     /**

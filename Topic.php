@@ -26,6 +26,7 @@ class Topic extends \Depage\Entity\Entity
         "subject" => "",
         "description" => "",
         "pos" => 0,
+        "visible" => 1,
     );
 
     /**

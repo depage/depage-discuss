@@ -6,6 +6,8 @@
     <nav class="list threads">
         <ul>
             <?php foreach ($this->threads as $thread) {
+                if (!$thread->visible) continue;
+
                 $post = strip_tags($thread->post);
                 if (strlen($post) > $maxlength) {
                     $post = substr($post, 0, $maxlength) . "…";

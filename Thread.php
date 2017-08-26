@@ -33,6 +33,7 @@ class Thread extends \Depage\Entity\Entity
         "editDate" => null,
         "lastPostDate" => null,
         "sticky" => 0,
+        "visible" => 1,
     );
 
     /**

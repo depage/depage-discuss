@@ -30,3 +30,8 @@ ALTER TABLE `_discuss_threads` ADD COLUMN `editDate` timestamp NULL DEFAULT NULL
     @version 1.5.6.2
 */
 ALTER TABLE `_discuss_threads` ADD COLUMN `lastPostDate` timestamp NULL DEFAULT CURRENT_TIMESTAMP AFTER `editDate`;
+
+/*
+    @version 1.5.6.3
+*/
+ALTER TABLE `_discuss_threads` ADD COLUMN `visible` tinyint(1) NOT NULL DEFAULT 1 AFTER sticky;
