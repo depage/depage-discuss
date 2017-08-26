@@ -40,7 +40,7 @@ class Post extends \Depage\Entity\Entity
     /**
      * @brief voteTable
      **/
-    static protected $voteTable = "_discuss_post_votes";
+    static public $voteTable = "_discuss_post_votes";
 
     /**
      * @brief pdo object for database access
@@ -123,7 +123,7 @@ class Post extends \Depage\Entity\Entity
             FROM
                 {$pdo->prefix}_discuss_posts AS post
                 LEFT JOIN {$pdo->prefix}" . self::$voteTable . " AS vote
-            ON post.id = vote.postId
+            ON post.id = vote.id
             WHERE post.id = :postId
             GROUP BY post.id
             "

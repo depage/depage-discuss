@@ -43,7 +43,7 @@ class Thread extends \Depage\Entity\Entity
     /**
      * @brief voteTable
      **/
-    static protected $voteTable = "_discuss_thread_votes";
+    static public $voteTable = "_discuss_thread_votes";
 
     /**
      * @brief pdo object for database access

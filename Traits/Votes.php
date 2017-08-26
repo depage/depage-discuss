@@ -113,11 +113,11 @@ trait Votes
         }
 
         $query = $this->pdo->prepare("
-            REPLACE INTO " . self::$voteTable . "
-                (postId, uid, upvote, downvote) VALUES (:postId, :uid, :upvote, :downvote);
+            REPLACE INTO {$this->pdo->prefix}" . self::$voteTable . "
+                (id, uid, upvote, downvote) VALUES (:id, :uid, :upvote, :downvote);
         ");
         $query->execute([
-            "postId" => $this->id,
+            "id" => $this->id,
             "uid" => $uid,
             "upvote" => $upvote,
             "downvote" => $downvote,
@@ -129,12 +129,12 @@ trait Votes
                 IFNULL(SUM(vote.upvote), 0) AS upvotes,
                 IFNULL(SUM(vote.downvote), 0) AS downvotes
             FROM
-                " . self::voteTable . " AS vote
-            WHERE vote.postId = :postId
+                {$this->pdo->prefix}" . self::$voteTable . " AS vote
+            WHERE vote.id = :id
             "
         );
         $query->execute([
-            "postId" => $this->id,
+            "id" => $this->id,
         ]);
 
         $vote = $query->fetchObject();
