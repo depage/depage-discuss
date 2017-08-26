@@ -199,6 +199,10 @@ class Thread extends \Depage\Entity\Entity
         $primary = self::$primary[0];
         $isNew = $this->data[$primary] === null;
 
+        if ($isNew) {
+            $this->lastPostDate = date('Y-m-d H:i:s');
+        }
+
         $dirty = array_keys($this->dirty, true);
 
         if (count($dirty) > 0) {
