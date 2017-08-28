@@ -94,6 +94,20 @@ class Discuss
         return $topics;
     }
     // }}}
+    // {{{ loadThreadsByCurrentUser()
+    /**
+     * @brief loadThreadsByCurrentUser
+     *
+     * @param mixed $
+     * @return void
+     **/
+    public function loadThreadsByCurrentUser()
+    {
+        $topics = Thread::loadByUser($this->pdo, $this->user);
+
+        return $topics;
+    }
+    // }}}
     // {{{ loadTopicById()
     /**
      * @brief loadTopicById
@@ -372,14 +386,18 @@ class Discuss
      **/
     public function renderUserInfo($uid)
     {
-        $user = \Depage\Auth\User::loadById($this->pdo, $uid);
+        static $snippets = [];
 
-        $html = new Html('UserInfo.tpl', [
-            'discuss' => $this,
-            'user' => $user,
-        ], $this->htmlOptions);
+        if (!isset($snippets[$uid])) {
+            $user = \Depage\Auth\User::loadById($this->pdo, $uid);
 
-        echo($html);
+            $snippets[$uid] = new Html('UserInfo.tpl', [
+                'discuss' => $this,
+                'user' => $user,
+            ], $this->htmlOptions);
+        }
+
+        echo($snippets[$uid]);
     }
     // }}}
 

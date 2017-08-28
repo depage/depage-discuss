@@ -135,6 +135,43 @@ class Thread extends \Depage\Entity\Entity
 
     }
     // }}}
+    // {{{ loadByUserId()
+    /**
+     * @brief loadByUserId
+     *
+     * @param mixed $
+     * @return void
+     **/
+    public static function loadByUser($pdo, $user)
+    {
+        $fields = "thread." . implode(", thread.", self::getFields());
+        $params = [
+            "uid1" => $user->id,
+            "uid2" => $user->id,
+        ];
+
+        $query = $pdo->prepare(
+            "SELECT $fields
+            FROM
+                {$pdo->prefix}_discuss_threads AS thread
+                LEFT JOIN {$pdo->prefix}_discuss_posts AS post
+                ON thread.id = post.threadId
+            WHERE
+            	(thread.uid = :uid1 OR post.uid = :uid2)
+            	AND thread.topicId IS NOT NULL
+            GROUP BY thread.id
+            ORDER BY thread.lastPostDate DESC"
+        );
+        $query->execute($params);
+
+        // pass pdo-instance to constructor
+        $query->setFetchMode(\PDO::FETCH_CLASS, get_called_class(), array($pdo));
+        $threads = $query->fetchAll();
+
+        return $threads;
+
+    }
+    // }}}
 
     // {{{ loadPosts()
     /**
@@ -254,7 +291,7 @@ class Thread extends \Depage\Entity\Entity
             } else if ($type == "thread" && $this->id == $id) {
                 $el = $this;
             } else {
-                die();
+                return;
             }
 
             $el->vote($user->id, $_POST['vote']);
