@@ -307,6 +307,30 @@ class Thread extends \Depage\Entity\Entity
         }
     }
     // }}}
+    // {{{ setLastViewedPost()
+    /**
+     * @brief setLastViewedPost
+     *
+     * @param mixed $
+     * @return void
+     **/
+    public function setLastViewedPost($user, $post)
+    {
+        $query = $this->pdo->prepare("
+            REPLACE INTO
+                {$this->pdo->prefix}_discuss_thread_views
+            SET
+                uid=:uid,
+                threadId=:threadId,
+                postId=:postId
+        ");
+        return $query->execute([
+            'uid' => $user->id,
+            'threadId' => $this->id,
+            'postId' => $post->id,
+        ]);
+    }
+    // }}}
 }
 
 // vim:set ft=php sw=4 sts=4 fdm=marker et :

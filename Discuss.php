@@ -364,13 +364,15 @@ class Discuss
             $form = $this->getLoginMessage();
         }
 
-        $posts = $thread->loadPosts(0, 400);
+        $user = $this->getCurrentUser();
+        $posts = $thread->loadPosts(0, 1000);
+        $thread->setLastViewedPost($user, end($posts));
 
         $html = new Html("Thread.tpl", [
             'discuss' => $this,
             'thread' => $thread,
             'posts' => $posts,
-            'user' => $this->getCurrentUser(),
+            'user' => $user,
             'postForm' => $form,
         ], $this->htmlOptions);
 
