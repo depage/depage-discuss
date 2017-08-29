@@ -400,6 +400,30 @@ class Discuss
         echo($snippets[$uid]);
     }
     // }}}
+    // {{{ renderThreadsByCurrentUser()
+    /**
+     * @brief renderThreadsByCurrentUser
+     *
+     * @param mixed
+     * @return void
+     **/
+    public function renderThreadsByCurrentUser()
+    {
+        $threads = $this->loadThreadsByCurrentUser();
+
+        if (count($threads) > 0) {
+            $html = new Html("Topic.tpl", [
+                'discuss' => $this,
+                'threads' => $threads,
+                'user' => $this->getCurrentUser(),
+            ], $this->htmlOptions);
+        } else {
+            $html = "<p>" . _("You did not take part in any discussions yet.") . "</p>";
+        }
+
+        return $html;
+    }
+    // }}}
 
     // {{{ __toString()
     /**
