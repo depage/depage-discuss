@@ -316,6 +316,10 @@ class Thread extends \Depage\Entity\Entity
      **/
     public function setLastViewedPost($user, $post)
     {
+        if (!$user) {
+            return false;
+        }
+
         $query = $this->pdo->prepare("
             REPLACE INTO
                 {$this->pdo->prefix}_discuss_thread_views
@@ -329,6 +333,22 @@ class Thread extends \Depage\Entity\Entity
             'threadId' => $this->id,
             'postId' => $post->id,
         ]);
+    }
+    // }}}
+    // {{{ getLastViewedPost()
+    /**
+     * @brief getLastViewedPost
+     *
+     * @param mixed $user
+     * @return void
+     **/
+    public function getLastViewedPost($user)
+    {
+        if (!$user) {
+            return false;
+        }
+
+        return Post::loadByUserLastViewed($this->pdo, $this, $user);
     }
     // }}}
 }

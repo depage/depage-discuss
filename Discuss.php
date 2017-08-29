@@ -182,7 +182,7 @@ class Discuss
      * @param mixed
      * @return void
      **/
-    public function getLinkTo($object)
+    public function getLinkTo($object, $user = false)
     {
         $action = "";
         $hash = "";
@@ -192,6 +192,10 @@ class Discuss
         } else if ($object instanceof Thread) {
             $action = "thread";
             $id = $object->id;
+
+            if ($user && $lastViewedPost = $object->getLastViewedPost($user)) {
+                $hash = "#post-{$lastViewedPost->id}";
+            }
         } else if ($object instanceof Post) {
             $action = "thread";
             $id = $object->threadId;
@@ -364,15 +368,14 @@ class Discuss
             $form = $this->getLoginMessage();
         }
 
-        $user = $this->getCurrentUser();
         $posts = $thread->loadPosts(0, 1000);
-        $thread->setLastViewedPost($user, end($posts));
+        $thread->setLastViewedPost($this->user, end($posts));
 
         $html = new Html("Thread.tpl", [
             'discuss' => $this,
             'thread' => $thread,
             'posts' => $posts,
-            'user' => $user,
+            'user' => $this->user,
             'postForm' => $form,
         ], $this->htmlOptions);
 
@@ -412,12 +415,13 @@ class Discuss
     public function renderThreadsByCurrentUser()
     {
         $threads = $this->loadThreadsByCurrentUser();
+        $user = $this->getCurrentUser();
 
         if (count($threads) > 0) {
             $html = new Html("Topic.tpl", [
                 'discuss' => $this,
                 'threads' => $threads,
-                'user' => $this->getCurrentUser(),
+                'user' => $user,
             ], $this->htmlOptions);
         } else {
             $html = "<p>" . _("You did not take part in any discussions yet.") . "</p>";
