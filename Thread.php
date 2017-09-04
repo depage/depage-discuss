@@ -157,8 +157,8 @@ class Thread extends \Depage\Entity\Entity
                 LEFT JOIN {$pdo->prefix}_discuss_posts AS post
                 ON thread.id = post.threadId
             WHERE
-            	(thread.uid = :uid1 OR post.uid = :uid2)
-            	AND thread.topicId IS NOT NULL
+                (thread.uid = :uid1 OR post.uid = :uid2)
+                AND thread.topicId IS NOT NULL
             GROUP BY thread.id
             ORDER BY thread.lastPostDate DESC"
         );
