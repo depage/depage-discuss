@@ -358,7 +358,7 @@ class Discuss
             if ($form->validate()) {
                 $values = $form->getValues();
 
-                $post = $thread->addPost((string) $values['post'], $this->user->id);
+                $post = $thread->addPost($values['post'], $this->user->id);
 
                 $form->clearSession();
 

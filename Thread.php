@@ -199,7 +199,7 @@ class Thread extends \Depage\Entity\Entity
         $post = new Post($this->pdo);
         $post->setData([
             'threadId' => $this->id,
-            'post' => $text,
+            'post' => (string) $text,
             'uid' => $uid,
         ])
         ->save();

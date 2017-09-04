@@ -1,5 +1,5 @@
 <section class="discuss">
-    <h1><a href="<?php self::t($this->discuss->getLinkTo($thread)); ?>"><?php self::t($this->thread->subject); ?></a></h1>
+    <h1><a href="<?php self::t($this->discuss->getLinkTo($this->thread)); ?>"><?php self::t($this->thread->subject); ?></a></h1>
     <article <?php self::attr([
         'class' => "thread",
     ]); ?>>
