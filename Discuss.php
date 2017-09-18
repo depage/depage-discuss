@@ -424,7 +424,7 @@ class Discuss
                 'user' => $user,
             ], $this->htmlOptions);
         } else {
-            $html = "<p>" . _("You did not take part in any discussions yet.") . "</p>";
+            $html = "<p>" . _("You are not involved in any discussions yet.") . "</p>";
         }
 
         return $html;

@@ -223,7 +223,7 @@ class Post extends \Depage\Entity\Entity
             foreach($mentions as $username) {
                 try {
                     $user = \Depage\Auth\User::loadByUsername($this->pdo, $username);
-                    // @todo notify user
+                    // @todo notify user but only if not post owner
                 } catch (\Exception $e) {
                 }
             }

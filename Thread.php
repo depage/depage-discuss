@@ -82,9 +82,14 @@ class Thread extends \Depage\Entity\Entity
         ];
 
         $query = $pdo->prepare(
-            "SELECT $fields
+            "SELECT
+                $fields,
+                IFNULL(SUM(vote.upvote), 0) AS upvotes,
+                IFNULL(SUM(vote.downvote), 0) AS downvotes
             FROM
                 {$pdo->prefix}_discuss_threads AS thread
+                LEFT JOIN {$pdo->prefix}" . self::$voteTable . " AS vote
+                ON thread.id = vote.id
             WHERE thread.topicId = :topicId
             ORDER BY thread.sticky DESC, thread.lastPostDate DESC"
         );
@@ -120,7 +125,7 @@ class Thread extends \Depage\Entity\Entity
             FROM
                 {$pdo->prefix}_discuss_threads AS thread
                 LEFT JOIN {$pdo->prefix}" . self::$voteTable . " AS vote
-            ON thread.id = vote.id
+                ON thread.id = vote.id
             WHERE thread.id = :threadId
             GROUP BY thread.id
             ORDER BY thread.sticky"
