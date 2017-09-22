@@ -1,15 +1,16 @@
-<div class="discuss">
+<section class="discuss">
     <h1>Topics</h1>
     <nav class="list topics">
         <ul>
             <?php foreach ($this->topics as $topic) {
+                if (!$topic->visible) continue;
             ?>
                 <li class="teaser">
-                    <h1><a href="<?php self::t($topic->getLink()); ?>"><?php self::t($topic->subject); ?></a></h1>
+                    <h1><a href="<?php self::t($this->discuss->getLinkTo($topic)); ?>"><?php self::t($topic->subject); ?></a></h1>
                     <p><?php self::t($topic->description); ?></p>
                 </li>
             <?php } ?>
         </ul>
     </nav>
-</div>
+</section>
 <?php // vim:set ft=php sw=4 sts=4 fdm=marker et :

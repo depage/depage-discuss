@@ -1,48 +1,67 @@
-<div class="discuss">
-    <?php if (!empty($this->topic)) { ?>
-        <header>
-            <a href="<?php self::t($this->topic->getLink()); ?>"><?php self::t($this->topic->subject); ?></a>
-        </header>
-    <?php } ?>
-    <h1><a href="<?php self::t($this->thread->getLink()); ?>"><?php self::t($this->thread->subject); ?></a></h1>
-    <article class="thread">
-        <div class="content">
+<section class="discuss">
+    <h1><a href="<?php self::t($this->discuss->getLinkTo($this->thread)); ?>"><?php self::t($this->thread->subject); ?></a></h1>
+    <article <?php self::attr([
+        'class' => "thread",
+    ]); ?>>
+        <div <?php self::attr([
+            'class' => "body",
+            'data-discuss-id' => "thread-{$this->thread->id}",
+        ]); ?>>
+            <?php
+                $upvotes = $this->thread->getUpvotes();
+                $downvotes = $this->thread->getDownvotes();
+                $sum = $upvotes - $downvotes;
+            ?>
             <header>
-                <a class="profile-image" href="#">
-                    <img src="" alt="@username">
-                </a>
-
-                <a class="username" href="#"><?php self::t("@username"); ?></a>
+                <?php $this->discuss->renderUserInfo($this->thread->uid); ?>
                 <time><?php self::t(self::formatDateNatural($this->thread->postDate, true)); ?></time>
             </header>
-            <?php self::e($this->thread->post); ?>
+            <div class="content">
+                <?php self::e($this->thread->post); ?>
+            </div>
+            <footer>
+                <?php if(!empty($this->user)) { ?>
+                    <div class="votes">
+                        <span class="sum"><?php self::t($sum); ?></span>
+                        <span class="up"><?php self::t($upvotes); ?></span>
+                        <span class="down"><?php self::t($downvotes); ?></span>
+                    </div>
+                <?php } ?>
+            </footer>
         </div>
 
-        <?php foreach ($this->posts as $post) { ?>
+        <?php foreach ($this->posts as $post) {
+            if (!$post->visible) continue;
+
+            $upvotes = $post->getUpvotes();
+            $downvotes = $post->getDownvotes();
+            $sum = $upvotes - $downvotes;
+        ?>
             <article <?php self::attr([
-                "class" => "post",
-                "data-discuss-post" => $post->id,
+                'class' => "post",
+                'id' => "post-{$post->id}",
+                'data-discuss-id' => "post-{$post->id}",
             ]) ?>>
                 <header>
-                    <a class="profile-image" href="#">
-                        <img src="" alt="@username">
-                    </a>
-
-                    <a class="username" href="#"><?php self::t("@username"); ?></a>
+                    <?php $this->discuss->renderUserInfo($post->uid); ?>
                     <time><?php self::t(self::formatDateNatural($post->postDate, true)); ?></time>
                 </header>
-                <?php self::e($post->post); ?>
+                <div class="content">
+                    <?php self::e($post->post); ?>
+                </div>
                 <footer>
-                    <div class="votes">
-                        <span class="sum"><?php self::t($post->getVotes()); ?></span>
-                        (<span class="up"><?php self::t($post->getUpvotes()); ?></span> /
-                        <span class="down"><?php self::t($post->getDownvotes()); ?></span>)
-                    </div>
+                    <?php if(!empty($this->user)) { ?>
+                        <div class="votes">
+                            <span class="sum"><?php self::t($sum); ?></span>
+                            <span class="up"><?php self::t($upvotes); ?></span>
+                            <span class="down"><?php self::t($downvotes); ?></span>
+                        </div>
+                    <?php } ?>
                 </footer>
             </article>
         <?php } ?>
     </article>
     <?php self::e($this->postForm); ?>
-</div>
+</section>
 
 <?php // vim:set ft=php sw=4 sts=4 fdm=marker et :

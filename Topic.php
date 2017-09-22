@@ -26,6 +26,7 @@ class Topic extends \Depage\Entity\Entity
         "subject" => "",
         "description" => "",
         "pos" => 0,
+        "visible" => 1,
     );
 
     /**
@@ -124,10 +125,6 @@ class Topic extends \Depage\Entity\Entity
     {
         $threads = Thread::loadByTopic($this->pdo, $this->id);
 
-        foreach ($threads as $thread) {
-            $thread->setTopic($this);
-        }
-
         return $threads;
     }
     // }}}
@@ -142,8 +139,6 @@ class Topic extends \Depage\Entity\Entity
     {
         $thread = Thread::loadById($this->pdo, $id);
 
-        $thread->setTopic($this);
-
         return $thread;
     }
     // }}}
@@ -157,31 +152,17 @@ class Topic extends \Depage\Entity\Entity
      **/
     public function addThread($subject, $post, $uid)
     {
+
         $thread = new Thread($this->pdo);
         $thread->setData([
             'subject' => $subject,
+            'topicId' => $this->id,
             'post' => $post,
             'uid' => $uid,
         ])
-        ->setTopic($this)
         ->save();
-    }
-    // }}}
-    // {{{ getLink()
-    /**
-     * @brief getLink
-     *
-     * @param mixed
-     * @return void
-     **/
-    public function getLink()
-    {
-        $link = "?" . http_build_query([
-            'action' => "threads",
-            'topic' => $this->id,
-        ]);
 
-        return $link;
+        return $thread;
     }
     // }}}
 

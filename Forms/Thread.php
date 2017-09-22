@@ -17,6 +17,23 @@ namespace Depage\Discuss\Forms;
  */
 class Thread extends \Depage\HtmlForm\HtmlForm
 {
+    // {{{ __construct()
+    /**
+     * @brief __construct
+     *
+     * @param mixed $name, $params = []
+     * @return void
+     **/
+    public function __construct($name, $params = [])
+    {
+        if (!isset($params['class'])) $params['class'] = "";
+
+        $params['class'] .= " new-post labels-on-top";
+
+        parent::__construct($name, $params);
+
+    }
+    // }}}
     // {{{ addChildElements()
     /**
      * @brief addChildElements

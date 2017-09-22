@@ -17,6 +17,8 @@ namespace Depage\Discuss;
  */
 class Thread extends \Depage\Entity\Entity
 {
+    use Traits\Votes;
+
     // {{{ variables
     /**
      * @brief fields
@@ -28,7 +30,10 @@ class Thread extends \Depage\Entity\Entity
         "subject" => "",
         "post" => "",
         "postDate" => null,
+        "editDate" => null,
+        "lastPostDate" => null,
         "sticky" => 0,
+        "visible" => 1,
     );
 
     /**
@@ -37,9 +42,9 @@ class Thread extends \Depage\Entity\Entity
     static protected $primary = ["id"];
 
     /**
-     * @brief topic
+     * @brief voteTable
      **/
-    protected $topic = null;
+    static public $voteTable = "_discuss_thread_votes";
 
     /**
      * @brief pdo object for database access
@@ -77,11 +82,16 @@ class Thread extends \Depage\Entity\Entity
         ];
 
         $query = $pdo->prepare(
-            "SELECT $fields
+            "SELECT
+                $fields,
+                IFNULL(SUM(vote.upvote), 0) AS upvotes,
+                IFNULL(SUM(vote.downvote), 0) AS downvotes
             FROM
                 {$pdo->prefix}_discuss_threads AS thread
+                LEFT JOIN {$pdo->prefix}" . self::$voteTable . " AS vote
+                ON thread.id = vote.id
             WHERE thread.topicId = :topicId
-            ORDER BY thread.sticky"
+            ORDER BY thread.sticky DESC, thread.lastPostDate DESC"
         );
         $query->execute($params);
 
@@ -108,10 +118,16 @@ class Thread extends \Depage\Entity\Entity
         ];
 
         $query = $pdo->prepare(
-            "SELECT $fields
+            "SELECT
+                $fields,
+                IFNULL(SUM(vote.upvote), 0) AS upvotes,
+                IFNULL(SUM(vote.downvote), 0) AS downvotes
             FROM
                 {$pdo->prefix}_discuss_threads AS thread
+                LEFT JOIN {$pdo->prefix}" . self::$voteTable . " AS vote
+                ON thread.id = vote.id
             WHERE thread.id = :threadId
+            GROUP BY thread.id
             ORDER BY thread.sticky"
         );
         $query->execute($params);
@@ -121,6 +137,43 @@ class Thread extends \Depage\Entity\Entity
         $thread = $query->fetch();
 
         return $thread;
+
+    }
+    // }}}
+    // {{{ loadByUserId()
+    /**
+     * @brief loadByUserId
+     *
+     * @param mixed $
+     * @return void
+     **/
+    public static function loadByUser($pdo, $user)
+    {
+        $fields = "thread." . implode(", thread.", self::getFields());
+        $params = [
+            "uid1" => $user->id,
+            "uid2" => $user->id,
+        ];
+
+        $query = $pdo->prepare(
+            "SELECT $fields
+            FROM
+                {$pdo->prefix}_discuss_threads AS thread
+                LEFT JOIN {$pdo->prefix}_discuss_posts AS post
+                ON thread.id = post.threadId
+            WHERE
+                (thread.uid = :uid1 OR post.uid = :uid2)
+                AND thread.topicId IS NOT NULL
+            GROUP BY thread.id
+            ORDER BY thread.lastPostDate DESC"
+        );
+        $query->execute($params);
+
+        // pass pdo-instance to constructor
+        $query->setFetchMode(\PDO::FETCH_CLASS, get_called_class(), array($pdo));
+        $threads = $query->fetchAll();
+
+        return $threads;
 
     }
     // }}}
@@ -136,10 +189,6 @@ class Thread extends \Depage\Entity\Entity
     {
         $posts = Post::loadByThread($this->pdo, $this->id, $from, $to);
 
-        foreach ($posts as $post){
-            $post->setThread($this);
-        }
-
         return $posts;
     }
     // }}}
@@ -150,70 +199,35 @@ class Thread extends \Depage\Entity\Entity
      * @param mixed
      * @return void
      **/
-    public function addPost($post, $uid)
+    public function addPost($text, $uid)
     {
-        $thread = new Post($this->pdo);
-        $thread->setData([
-            'post' => $post,
+        $post = new Post($this->pdo);
+        $post->setData([
+            'threadId' => $this->id,
+            'post' => (string) $text,
             'uid' => $uid,
         ])
-        ->setThread($this)
         ->save();
 
         return $post;
     }
     // }}}
 
-    // {{{ setTopic()
+    // {{{ setPost()
     /**
-     * @brief setTopic
+     * @brief setPost
      *
-     * @param mixed $topic
+     * @param mixed $post
      * @return void
      **/
-    public function setTopic($topic)
+    public function setPost($post)
     {
-        if ($this->data['topicId'] == null) {
-            $this->topicId = $topic->id;
-            $this->topic = $topic;
-        } else if ($this->data['topicId'] == $topic->id) {
-            $this->topic = $topic;
+        if (!empty($post) && substr($post, 0, 1) !== "<") {
+            $post = "<p>" . str_replace("\n", "</p><p>", $post) . "</p>";
         }
 
-        return $this;
-    }
-    // }}}
-    // {{{ getTopic()
-    /**
-     * @brief getTopic
-     *
-     * @param mixed
-     * @return void
-     **/
-    public function getTopic()
-    {
-        if (empty($this->topic) && $this->data['topicId'] !== null) {
-            $this->topic = Topic::loadById($this->pdo, $this->data['topicId']);
-        }
-        return $this->topic;
-    }
-    // }}}
-
-    // {{{ getLink()
-    /**
-     * @brief getLink
-     *
-     * @param mixed
-     * @return void
-     **/
-    public function getLink()
-    {
-        $link = "?" . http_build_query([
-            'action' => "posts",
-            'thread' => $this->id,
-        ]);
-
-        return $link;
+        $this->data['post'] = $post;
+        $this->dirty['post'] = true;
     }
     // }}}
 
@@ -227,6 +241,10 @@ class Thread extends \Depage\Entity\Entity
         $fields = array();
         $primary = self::$primary[0];
         $isNew = $this->data[$primary] === null;
+
+        if ($isNew) {
+            $this->lastPostDate = date('Y-m-d H:i:s');
+        }
 
         $dirty = array_keys($this->dirty, true);
 
@@ -259,6 +277,83 @@ class Thread extends \Depage\Entity\Entity
                 $this->dirty = array_fill_keys(array_keys(static::$fields), false);
             }
         }
+    }
+    // }}}
+
+    // {{{ processVote()
+    /**
+     * @brief processVote
+     *
+     * @return void
+     **/
+    public function processVote(\Depage\Auth\User $user)
+    {
+        if (!empty($user) && !empty($_POST['action']) && $_POST['action'] == "changeVote" && !empty($_POST['id']) && !empty($_POST['vote'])) {
+            list($type, $id) = explode("-", $_POST['id']);
+
+            if ($type == "post") {
+                $el = Post::loadById($this->pdo, $id);
+            } else if ($type == "thread" && $this->id == $id) {
+                $el = $this;
+            } else {
+                return;
+            }
+
+            $el->vote($user->id, $_POST['vote']);
+
+            $result = [
+                'uid' => $user->id,
+                'id' => "{$type}-{$el->id}",
+                'upvotes' => $el->upvotes,
+                'downvotes' => $el->downvotes,
+            ];
+            echo(json_encode($result, \JSON_NUMERIC_CHECK));
+            die();
+        }
+    }
+    // }}}
+    // {{{ setLastViewedPost()
+    /**
+     * @brief setLastViewedPost
+     *
+     * @param mixed $
+     * @return void
+     **/
+    public function setLastViewedPost($user, $post)
+    {
+        if (!$user) {
+            return false;
+        }
+
+        $query = $this->pdo->prepare("
+            REPLACE INTO
+                {$this->pdo->prefix}_discuss_thread_views
+            SET
+                uid=:uid,
+                threadId=:threadId,
+                postId=:postId
+        ");
+        return $query->execute([
+            'uid' => $user->id,
+            'threadId' => $this->id,
+            'postId' => $post->id,
+        ]);
+    }
+    // }}}
+    // {{{ getLastViewedPost()
+    /**
+     * @brief getLastViewedPost
+     *
+     * @param mixed $user
+     * @return void
+     **/
+    public function getLastViewedPost($user)
+    {
+        if (!$user) {
+            return false;
+        }
+
+        return Post::loadByUserLastViewed($this->pdo, $this, $user);
     }
     // }}}
 }

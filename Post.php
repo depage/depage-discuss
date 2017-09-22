@@ -17,6 +17,8 @@ namespace Depage\Discuss;
  */
 class Post extends \Depage\Entity\Entity
 {
+    use Traits\Votes;
+
     // {{{ variables
     /**
      * @brief fields
@@ -28,6 +30,7 @@ class Post extends \Depage\Entity\Entity
         "post" => "",
         "postDate" => null,
         "editDate" => null,
+        "visible" => 1,
     );
 
     /**
@@ -36,14 +39,9 @@ class Post extends \Depage\Entity\Entity
     static protected $primary = ["id"];
 
     /**
-     * @brief upvotes
+     * @brief voteTable
      **/
-    protected $upvotes = 0;
-
-    /**
-     * @brief downvotes
-     **/
-    protected $downvotes = 0;
+    static public $voteTable = "_discuss_post_votes";
 
     /**
      * @brief pdo object for database access
@@ -72,8 +70,6 @@ class Post extends \Depage\Entity\Entity
      *
      * @param mixed $
      * @return void
-     *
-     * @todo add order by votes
      **/
     public static function loadByThread($pdo, $threadId, $from = null, $to = null)
     {
@@ -89,8 +85,8 @@ class Post extends \Depage\Entity\Entity
                 IFNULL(SUM(vote.downvote), 0) AS downvotes
             FROM
                 {$pdo->prefix}_discuss_posts AS post
-                LEFT JOIN {$pdo->prefix}_discuss_votes AS vote
-            ON post.id = vote.postId
+                LEFT JOIN {$pdo->prefix}" . self::$voteTable . " AS vote
+            ON post.id = vote.id
             WHERE post.threadId = :threadId
             GROUP BY post.id
             ORDER BY post.postDate ASC
@@ -112,8 +108,6 @@ class Post extends \Depage\Entity\Entity
      *
      * @param mixed $
      * @return void
-     *
-     * @todo add order by votes
      **/
     public static function loadById($pdo, $postId)
     {
@@ -129,11 +123,10 @@ class Post extends \Depage\Entity\Entity
                 IFNULL(SUM(vote.downvote), 0) AS downvotes
             FROM
                 {$pdo->prefix}_discuss_posts AS post
-                LEFT JOIN {$pdo->prefix}_discuss_votes AS vote
-            ON post.id = vote.postId
+                LEFT JOIN {$pdo->prefix}" . self::$voteTable . " AS vote
+            ON post.id = vote.id
             WHERE post.id = :postId
             GROUP BY post.id
-            ORDER BY post.postDate ASC
             "
         );
         $query->execute($params);
@@ -146,176 +139,76 @@ class Post extends \Depage\Entity\Entity
 
     }
     // }}}
-
-    // {{{ setThread()
+    // {{{ loadByUserLastViewed()
     /**
-     * @brief setThread
+     * @brief loadByUserLastViewed
      *
-     * @param mixed $thread
+     * @param mixed $
      * @return void
      **/
-    public function setThread($thread)
+    public static function loadByUserLastViewed($pdo, $thread, $user)
     {
-        if ($this->data['threadId'] == null) {
-            $this->threadId = $thread->id;
-            $this->thread = $thread;
-        } else if ($this->data['threadId'] == $thread->id) {
-            $this->thread = $thread;
-        }
+        $fields = "post." . implode(", post.", self::getFields());
+        $params = [
+            "threadId" => $thread->id,
+            "uid" => $user->id,
+        ];
 
-        return $this;
+        $query = $pdo->prepare(
+            "SELECT
+                $fields,
+                IFNULL(SUM(vote.upvote), 0) AS upvotes,
+                IFNULL(SUM(vote.downvote), 0) AS downvotes
+            FROM
+                {$pdo->prefix}_discuss_thread_views AS view,
+                {$pdo->prefix}_discuss_posts AS post
+                LEFT JOIN {$pdo->prefix}" . self::$voteTable . " AS vote
+                    ON post.id = vote.id
+            WHERE post.id = view.postId
+                AND view.threadId = :threadId
+                AND view.uid = :uid
+            GROUP BY post.id
+            "
+        );
+        $query->execute($params);
+
+        // pass pdo-instance to constructor
+        $query->setFetchMode(\PDO::FETCH_CLASS, get_called_class(), array($pdo));
+        $post = $query->fetch();
+
+        return $post;
     }
     // }}}
-    // {{{ getTopic()
+    // {{{ loadThread()
     /**
-     * @brief getTopic
+     * @brief loadThread
      *
      * @param mixed
      * @return void
      **/
-    public function getTopic()
+    public function loadThread()
     {
-        if (empty($this->topic) && $this->data['topicId'] !== null) {
-            $this->topic = Topic::loadById($this->pdo, $this->data['topicId']);
-        }
-        return $this->topic;
+        return Thread::loadById($this->pdo, $this->threadId);
     }
     // }}}
 
-    // {{{ voteUp()
+    // {{{ setPost()
     /**
-     * @brief voteUp
+     * @brief setPost
      *
-     * @param mixed $uid
+     * @param mixed $post
      * @return void
      **/
-    public function voteUp($uid)
+    public function setPost($post)
     {
-        return $this->vote($uid, 1);
-    }
-    // }}}
-    // {{{ voteDown()
-    /**
-     * @brief voteDown
-     *
-     * @param mixed $uid
-     * @return void
-     **/
-    public function voteDown($uid)
-    {
-        return $this->vote($uid, -1);
-    }
-    // }}}
-    // {{{ voteReset()
-    /**
-     * @brief voteReset
-     *
-     * @param mixed $uid
-     * @return void
-     **/
-    public function voteReset($uid)
-    {
-        return $this->vote($uid, 0);
-    }
-    // }}}
-    // {{{ vote()
-    /**
-     * @brief vote
-     *
-     * @param mixed $uid, $direction
-     * @return void
-     **/
-    public function vote($uid, $direction)
-    {
-        if ($this->uid == $uid) {
-            // users themselves cannot vote on their posts
-            return $this;
-        }
-        if ($direction > 0) {
-            $upvote = 1;
-            $downvote = 0;
-        } else if ($direction < 0) {
-            $upvote = 0;
-            $downvote = 1;
-        } else {
-            $upvote = 0;
-            $downvote = 0;
+        if (!empty($post) && substr($post, 0, 1) !== "<") {
+            $post = "<p>" . str_replace("\n", "</p><p>", $post) . "</p>";
         }
 
-        $query = $this->pdo->prepare("
-            REPLACE INTO {$this->pdo->prefix}_discuss_votes
-                (postId, uid, upvote, downvote) VALUES (:postId, :uid, :upvote, :downvote);
-        ");
-        $query->execute([
-            "postId" => $this->id,
-            "uid" => $uid,
-            "upvote" => $upvote,
-            "downvote" => $downvote,
-        ]);
-
-        // updated current votes in object
-        $query = $this->pdo->prepare(
-            "SELECT
-                IFNULL(SUM(vote.upvote), 0) AS upvotes,
-                IFNULL(SUM(vote.downvote), 0) AS downvotes
-            FROM
-                {$this->pdo->prefix}_discuss_votes AS vote
-            WHERE vote.postId = :postId
-            "
-        );
-        $query->execute([
-            "postId" => $this->id,
-        ]);
-
-        $vote = $query->fetchObject();
-        $this->upvotes = $vote->upvotes;
-        $this->downvotes = $vote->downvotes;
-
-        return $this;
+        $this->data['post'] = $post;
+        $this->dirty['post'] = true;
     }
     // }}}
-
-    // {{{ getVotes()
-    /**
-     * @brief getVotes
-     *
-     * @param mixed $param
-     * @return void
-     **/
-    public function getVotes()
-    {
-        $votes = $this->upvotes - $this->downvotes;
-
-        return (int) $votes;
-    }
-    // }}}
-    // {{{ getUpvotes()
-    /**
-     * @brief getUpvotes
-     *
-     * @param mixed $param
-     * @return void
-     **/
-    public function getUpvotes()
-    {
-        return (int) $this->upvotes;
-
-    }
-    // }}}
-    // {{{ getDownvotes()
-    /**
-     * @brief getDownvotes
-     *
-     * @param mixed $param
-     * @return void
-     **/
-    public function getDownvotes()
-    {
-        return (int) -1 * $this->downvotes;
-
-    }
-    // }}}
-
     // {{{ notify()
     /**
      * @brief notify
@@ -330,7 +223,7 @@ class Post extends \Depage\Entity\Entity
             foreach($mentions as $username) {
                 try {
                     $user = \Depage\Auth\User::loadByUsername($this->pdo, $username);
-                    // @todo notify user
+                    // @todo notify user but only if not post owner
                 } catch (\Exception $e) {
                 }
             }
@@ -347,9 +240,10 @@ class Post extends \Depage\Entity\Entity
     public function getMentions()
     {
         $users = [];
-        $text = strip_tags($this->post);
+        $text = strip_tags(str_replace("<", " <", $this->post));
+        echo($text);
 
-        $count = preg_match_all("/@([a-z0-9]+)/i", $text, $matches);
+        $count = preg_match_all("/@([_a-zA-Z0-9]+)/", $text, $matches);
 
         if ($count > 0) {
             foreach($matches[1] as $username) {
@@ -397,6 +291,11 @@ class Post extends \Depage\Entity\Entity
 
             if ($isNew) {
                 $this->data[$primary] = $this->pdo->lastInsertId();
+
+                $cmd = $this->pdo->prepare("UPDATE {$this->pdo->prefix}_discuss_threads SET lastPostDate=NOW(), editDate=editDate WHERE id = :threadId");
+                $cmd->execute([
+                    'threadId' => $this->threadId,
+                ]);
             }
 
             if ($success) {

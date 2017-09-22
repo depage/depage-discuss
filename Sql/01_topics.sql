@@ -12,3 +12,8 @@ CREATE TABLE `_discuss_topics` (
     `pos` int(11) unsigned NOT NULL DEFAULT '0',
     PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
+
+/*
+    @version 1.5.6.3
+*/
+ALTER TABLE `_discuss_topics` ADD COLUMN `visible` tinyint(1) NOT NULL DEFAULT 1 AFTER pos;

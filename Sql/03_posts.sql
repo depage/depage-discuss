@@ -19,3 +19,8 @@ CREATE TABLE `_discuss_posts` (
     CONSTRAINT `_discuss_posts_ibfk_1` FOREIGN KEY (`threadId`) REFERENCES `_discuss_threads` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
     CONSTRAINT `_discuss_posts_ibfk_2` FOREIGN KEY (`uid`) REFERENCES `_auth_user` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
+
+/*
+    @version 1.5.6.3
+*/
+ALTER TABLE `_discuss_posts` ADD COLUMN `visible` tinyint(1) NOT NULL DEFAULT 1 AFTER editDate;
