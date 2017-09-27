@@ -321,7 +321,7 @@ class Thread extends \Depage\Entity\Entity
      **/
     public function setLastViewedPost($user, $post)
     {
-        if (!$user) {
+        if (!$user || !$post) {
             return false;
         }
 
