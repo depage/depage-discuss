@@ -382,27 +382,27 @@ class Discuss
         return $html;
     }
     // }}}
-    // {{{ renderUserInfo()
+    // {{{ htmlUserInfo()
     /**
-     * @brief renderUserInfo
+     * @brief htmlUserInfo
      *
      * @param mixed $uid
      * @return void
      **/
-    public function renderUserInfo($uid)
+    public function htmlUserInfo($uid)
     {
         static $snippets = [];
 
         if (!isset($snippets[$uid])) {
             $user = \Depage\Auth\User::loadById($this->pdo, $uid);
 
-            $snippets[$uid] = new Html('UserInfo.tpl', [
+            $snippets[$uid] = (string) new Html('UserInfo.tpl', [
                 'discuss' => $this,
                 'user' => $user,
             ], $this->htmlOptions);
         }
 
-        echo($snippets[$uid]);
+        return $snippets[$uid];
     }
     // }}}
     // {{{ renderThreadsByCurrentUser()

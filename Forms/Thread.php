@@ -26,6 +26,7 @@ class Thread extends \Depage\HtmlForm\HtmlForm
      **/
     public function __construct($name, $params = [])
     {
+        $params['class'] = $params['class'] ?? "";
         $params['class'] .= " new-post labels-on-top";
 
         parent::__construct($name, $params);

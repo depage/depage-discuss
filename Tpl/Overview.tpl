@@ -6,8 +6,12 @@
                 if (!$topic->visible) continue;
             ?>
                 <li class="teaser">
-                    <h1><a href="<?php self::t($this->discuss->getLinkTo($topic)); ?>"><?php self::t($topic->subject); ?></a></h1>
-                    <p><?php self::t($topic->description); ?></p>
+                    <div class="desc">
+                        <h2><a href="<?php self::t($this->discuss->getLinkTo($topic)); ?>"><?php self::t($topic->subject); ?></a></h2>
+                        <p><?php self::t($topic->description); ?></p>
+                    </div>
+                    <div class="num num-threads"><?php self::t($topic->numThreads); ?></div>
+                    <div class="num num-posts"><?php self::t($topic->numPosts); ?></div>
                 </li>
             <?php } ?>
         </ul>

@@ -192,6 +192,66 @@ class Post extends \Depage\Entity\Entity
     }
     // }}}
 
+    // {{{ countByTopic()
+    /**
+     * @brief countByTopic
+     *
+     * @param mixed $
+     * @return void
+     **/
+    public static function countByTopic($pdo, $topicId)
+    {
+        $params = [
+            "topicId" => $topicId,
+        ];
+
+        $query = $pdo->prepare(
+            "SELECT
+                COUNT(post.id)
+            FROM
+                {$pdo->prefix}_discuss_posts AS post,
+                {$pdo->prefix}_discuss_threads AS thread
+            WHERE post.threadId = thread.id AND thread.topicId = :topicId
+            "
+        );
+        $query->execute($params);
+
+        $count = $query->fetchColumn();
+
+        return $count;
+
+    }
+    // }}}
+    // {{{ countByThread()
+    /**
+     * @brief countByThread
+     *
+     * @param mixed $
+     * @return void
+     **/
+    public static function countByThread($pdo, $threadId)
+    {
+        $params = [
+            "threadId" => $threadId,
+        ];
+
+        $query = $pdo->prepare(
+            "SELECT
+                COUNT(*)
+            FROM
+                {$pdo->prefix}_discuss_posts AS post
+            WHERE post.threadId = :threadId
+            "
+        );
+        $query->execute($params);
+
+        $count = $query->fetchColumn();
+
+        return $count;
+
+    }
+    // }}}
+
     // {{{ setPost()
     /**
      * @brief setPost

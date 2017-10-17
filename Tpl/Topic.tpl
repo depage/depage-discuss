@@ -14,8 +14,11 @@
                 }
             ?>
                 <li class="teaser">
-                    <h1><a href="<?php self::t($this->discuss->getLinkTo($thread, $this->user)); ?>"><?php self::t($thread->subject); ?></a></h1>
-                    <p><?php self::e($post); ?></p>
+                    <div class="desc">
+                        <h2><a href="<?php self::t($this->discuss->getLinkTo($thread, $this->user)); ?>"><?php self::t($thread->subject); ?></a></h2>
+                        <p><?php self::e($post); ?></p>
+                    </div>
+                    <div class="num num-posts"><?php self::t($thread->numPosts); ?></div>
                 </li>
             <?php } ?>
         </ul>

@@ -13,7 +13,7 @@
                 $sum = $upvotes - $downvotes;
             ?>
             <header>
-                <?php $this->discuss->renderUserInfo($this->thread->uid); ?>
+                <?php self::e($this->discuss->htmlUserInfo($this->thread->uid)); ?>
                 <time><?php self::t(self::formatDateNatural($this->thread->postDate, true)); ?></time>
             </header>
             <div class="content">
@@ -43,7 +43,7 @@
                 'data-discuss-id' => "post-{$post->id}",
             ]) ?>>
                 <header>
-                    <?php $this->discuss->renderUserInfo($post->uid); ?>
+                    <?php self::e($this->discuss->htmlUserInfo($post->uid)); ?>
                     <time><?php self::t(self::formatDateNatural($post->postDate, true)); ?></time>
                 </header>
                 <div class="content">

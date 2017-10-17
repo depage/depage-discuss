@@ -91,12 +91,13 @@ class Thread extends \Depage\Entity\Entity
                 LEFT JOIN {$pdo->prefix}" . self::$voteTable . " AS vote
                 ON thread.id = vote.id
             WHERE thread.topicId = :topicId
+            GROUP BY thread.id
             ORDER BY thread.sticky DESC, thread.lastPostDate DESC"
         );
         $query->execute($params);
 
         // pass pdo-instance to constructor
-        $query->setFetchMode(\PDO::FETCH_CLASS, get_called_class(), array($pdo));
+        $query->setFetchMode(\PDO::FETCH_CLASS, get_called_class(), [$pdo]);
         $thread = $query->fetchAll();
 
         return $thread;
@@ -178,6 +179,35 @@ class Thread extends \Depage\Entity\Entity
     }
     // }}}
 
+    // {{{ countByTopic()
+    /**
+     * @brief countByTopic
+     *
+     * @param mixed $
+     * @return void
+     **/
+    public static function countByTopic($pdo, $topicId)
+    {
+        $params = [
+            "topicId" => $topicId,
+        ];
+
+        $query = $pdo->prepare(
+            "SELECT
+                COUNT(*)
+            FROM
+                {$pdo->prefix}_discuss_threads AS thread
+            WHERE thread.topicId = :topicId"
+        );
+        $query->execute($params);
+
+        $count = $query->fetchColumn();
+
+        return $count;
+
+    }
+    // }}}
+
     // {{{ loadPosts()
     /**
      * @brief loadPosts
@@ -210,6 +240,19 @@ class Thread extends \Depage\Entity\Entity
         ->save();
 
         return $post;
+    }
+    // }}}
+
+    // {{{ getNumPosts()
+    /**
+     * @brief getNumPosts
+     *
+     * @param mixed
+     * @return void
+     **/
+    public function getNumPosts()
+    {
+        return Post::countByThread($this->pdo, $this->id);
     }
     // }}}
 
@@ -321,7 +364,7 @@ class Thread extends \Depage\Entity\Entity
      **/
     public function setLastViewedPost($user, $post)
     {
-        if (!$user) {
+        if (!$user || !$post) {
             return false;
         }
 

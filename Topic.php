@@ -143,6 +143,31 @@ class Topic extends \Depage\Entity\Entity
     }
     // }}}
 
+    // {{{ getNumThreads()
+    /**
+     * @brief getNumThreads
+     *
+     * @param mixed
+     * @return void
+     **/
+    public function getNumThreads()
+    {
+        return Thread::countByTopic($this->pdo, $this->id);
+    }
+    // }}}
+    // {{{ getNumPosts()
+    /**
+     * @brief getNumPosts
+     *
+     * @param mixed
+     * @return void
+     **/
+    public function getNumPosts()
+    {
+        return Post::countByTopic($this->pdo, $this->id);
+    }
+    // }}}
+
     // {{{ addThread()
     /**
      * @brief addThread
