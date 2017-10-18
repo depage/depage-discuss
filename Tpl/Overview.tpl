@@ -1,5 +1,8 @@
+<?php
+    $breadcrumps = $this->discuss->renderBreadcrumpsTo($this->discuss);
+?>
 <section class="discuss">
-    <h1>Topics</h1>
+    <h1 class="breadcrumps"><?php self::e($breadcrumps); ?></h1>
     <nav class="list topics">
         <ul>
             <?php foreach ($this->topics as $topic) {
@@ -16,5 +19,6 @@
             <?php } ?>
         </ul>
     </nav>
+    <div class="breadcrumps"><?php self::e($breadcrumps); ?></div>
 </section>
 <?php // vim:set ft=php sw=4 sts=4 fdm=marker et :

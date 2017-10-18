@@ -50,6 +50,7 @@ class Discuss
             'clean' => "space",
         ];
         $this->baseUrl = parse_url($_SERVER['REQUEST_URI'], \PHP_URL_PATH);
+        $this->subject = _("Forum");
     }
     // }}}
     // {{{ updateSchema()
@@ -186,7 +187,9 @@ class Discuss
     {
         $action = "";
         $hash = "";
-        if ($object instanceof Topic) {
+        if ($object instanceof \Depage\Discuss\Discuss) {
+            return $this->baseUrl;
+        } else if ($object instanceof Topic) {
             $action = "topic";
             $id = $object->id;
         } else if ($object instanceof Thread) {
@@ -378,6 +381,32 @@ class Discuss
             'user' => $this->user,
             'postForm' => $form,
         ], $this->htmlOptions);
+
+        return $html;
+    }
+    // }}}
+    // {{{ renderBreadcrumpsTo()
+    /**
+     * @brief renderBreadcrumpsTo
+     *
+     * @param mixed
+     * @return void
+     **/
+    public function renderBreadcrumpsTo($object)
+    {
+        if (!$object) return "";
+
+        $html = "";
+
+        if ($object instanceof Topic) {
+            $html .= $this->renderBreadcrumpsTo($this);
+        } else if ($object instanceof Thread) {
+            $topic = Topic::loadById($this->pdo, $object->topicId);
+            $html .= $this->renderBreadcrumpsTo($topic);
+        }
+
+        $link = $this->getLinkTo($object);
+        $html .= "<a href=\"$link\">" . htmlspecialchars($object->subject) . "</a> ";
 
         return $html;
     }

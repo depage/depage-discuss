@@ -1,5 +1,8 @@
+<?php
+    $breadcrumps = $this->discuss->renderBreadcrumpsTo($this->thread);
+?>
 <section class="discuss">
-    <h1><a href="<?php self::t($this->discuss->getLinkTo($this->thread)); ?>"><?php self::t($this->thread->subject); ?></a></h1>
+    <h1 class="breadcrumps"><?php self::e($breadcrumps); ?></h1>
     <article <?php self::attr([
         'class' => "thread",
     ]); ?>>
@@ -62,6 +65,7 @@
         <?php } ?>
     </article>
     <?php self::e($this->postForm); ?>
+    <div class="breadcrumps"><?php self::e($breadcrumps); ?></div>
 </section>
 
 <?php // vim:set ft=php sw=4 sts=4 fdm=marker et :
