@@ -2,7 +2,7 @@
     $breadcrumps = $this->discuss->renderBreadcrumpsTo($this->thread);
 ?>
 <section class="discuss">
-    <h1 class="breadcrumps"><?php self::e($breadcrumps); ?></h1>
+    <h1><?php self::t($this->thread->subject); ?></h1>
     <article <?php self::attr([
         'class' => "thread",
     ]); ?>>

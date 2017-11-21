@@ -3,7 +3,7 @@
     $breadcrumps = $this->discuss->renderBreadcrumpsTo($this->topic);
 ?>
 <section class="discuss">
-    <h1 class="breadcrumps"><?php self::e($breadcrumps); ?></h1>
+    <h1><?php self::t(_($this->topic->subject)); ?></h1>
     <nav class="list threads">
         <ul>
             <?php foreach ($this->threads as $thread) {

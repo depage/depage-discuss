@@ -35,6 +35,11 @@ class Discuss
      **/
     protected $baseUrl = "";
 
+    /**
+     * @brief breadcrumps
+     **/
+    public $breadcrumps = "";
+
     // {{{ __construct()
     /**
      * @brief __construct
@@ -234,7 +239,7 @@ class Discuss
      * @param mixed
      * @return void
      **/
-    public function getLoginMessage()
+    public function getLoginMessage($srcUrl)
     {
         return "";
     }
@@ -291,6 +296,8 @@ class Discuss
     {
         $topics = $this->loadAllTopics();
 
+        $this->breadcrumps = $this->renderBreadcrumpsTo($this);
+
         $html = new Html("Overview.tpl", [
             'discuss' => $this,
             'topics' => $topics,
@@ -310,6 +317,7 @@ class Discuss
     public function renderTopic($topicId)
     {
         $topic = $this->loadTopicById($topicId);
+        $this->breadcrumps = $this->renderBreadcrumpsTo($topic);
 
         if (!empty($this->user)) {
             $form = new Forms\Thread("new-thread-$topicId", [
@@ -326,7 +334,7 @@ class Discuss
                 self::redirect($this->getLinkTo($thread));
             }
         } else {
-            $form = $this->getLoginMessage();
+            $form = $this->getLoginMessage($this->getLinkTo($topic));
         }
         $threads = $topic->loadAllThreads();
 
@@ -351,6 +359,7 @@ class Discuss
     public function renderThread($threadId)
     {
         $thread = $this->loadThreadById($threadId);
+        $this->breadcrumps = $this->renderBreadcrumpsTo($thread);
 
         if (!empty($this->user)) {
             $thread->processVote($this->user);
@@ -368,7 +377,7 @@ class Discuss
                 self::redirect($this->getLinkTo($post));
             }
         } else {
-            $form = $this->getLoginMessage();
+            $form = $this->getLoginMessage($this->getLinkTo($thread));
         }
 
         $posts = $thread->loadPosts(0, 1000);
@@ -406,7 +415,12 @@ class Discuss
         }
 
         $link = $this->getLinkTo($object);
-        $html .= "<a href=\"$link\">" . htmlspecialchars($object->subject) . "</a> ";
+        if ($object instanceof Topic) {
+            $subject = _($object->subject);
+        } else {
+            $subject = $object->subject;
+        }
+        $html .= "<a href=\"$link\">" . htmlspecialchars($subject) . "</a> ";
 
         return $html;
     }

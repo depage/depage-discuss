@@ -2,7 +2,7 @@
     $breadcrumps = $this->discuss->renderBreadcrumpsTo($this->discuss);
 ?>
 <section class="discuss">
-    <h1 class="breadcrumps"><?php self::e($breadcrumps); ?></h1>
+    <h1><?php self::t($this->discuss->subject); ?></h1>
     <nav class="list topics">
         <ul>
             <?php foreach ($this->topics as $topic) {
@@ -10,8 +10,8 @@
             ?>
                 <li class="teaser">
                     <div class="desc">
-                        <h2><a href="<?php self::t($this->discuss->getLinkTo($topic)); ?>"><?php self::t($topic->subject); ?></a></h2>
-                        <p><?php self::t($topic->description); ?></p>
+                        <h2><a href="<?php self::t($this->discuss->getLinkTo($topic)); ?>"><?php self::t(_($topic->subject)); ?></a></h2>
+                        <p><?php self::t(_($topic->description)); ?></p>
                     </div>
                     <div class="num num-threads"><?php self::t($topic->numThreads); ?></div>
                     <div class="num num-posts"><?php self::t($topic->numPosts); ?></div>
