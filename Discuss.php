@@ -328,6 +328,7 @@ class Discuss
                 $values = $form->getValues();
 
                 $thread = $topic->addThread($values['subject'], (string) $values['post'], $this->user->id);
+                $this->onThreadAdded($thread);
 
                 $form->clearSession();
 
@@ -371,6 +372,7 @@ class Discuss
                 $values = $form->getValues();
 
                 $post = $thread->addPost($values['post'], $this->user->id);
+                $this->onPostAdded($post);
 
                 $form->clearSession();
 
@@ -471,6 +473,31 @@ class Discuss
         }
 
         return $html;
+    }
+    // }}}
+
+    // {{{ onThreadAdded()
+    /**
+     * @brief onThreadAdded
+     *
+     * @param mixed
+     * @return void
+     **/
+    protected function onThreadAdded($thread)
+    {
+
+    }
+    // }}}
+    // {{{ onPostAdded()
+    /**
+     * @brief onPostAdded
+     *
+     * @param mixed
+     * @return void
+     **/
+    protected function onPostAdded($post)
+    {
+
     }
     // }}}
 
