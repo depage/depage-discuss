@@ -28,6 +28,7 @@ class Thread extends \Depage\HtmlForm\HtmlForm
     {
         $params['class'] = $params['class'] ?? "";
         $params['class'] .= " new-post labels-on-top";
+        $params['label'] = _("Post new thread");
 
         parent::__construct($name, $params);
 
@@ -43,9 +44,13 @@ class Thread extends \Depage\HtmlForm\HtmlForm
     public function addChildElements()
     {
         $this->addText("subject", [
+            'label' => _("Title"),
+            'class' => "title",
             'required' => true,
         ]);
         $this->addRichtext("post", [
+            'label' => _("Post"),
+            'class' => "post",
             'required' => true,
             'autogrow' => true,
             'allowedTags' => [

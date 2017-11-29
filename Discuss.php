@@ -40,6 +40,11 @@ class Discuss
      **/
     public $breadcrumps = "";
 
+    /**
+     * @brief subject
+     **/
+    public $subject = "";
+
     // {{{ __construct()
     /**
      * @brief __construct

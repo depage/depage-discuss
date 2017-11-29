@@ -1,9 +1,19 @@
 <?php
     $maxlength = 100;
     $breadcrumps = $this->discuss->renderBreadcrumpsTo($this->topic);
+    $subject = $this->topic->subject ?? "";
 ?>
-<section class="discuss">
-    <h1><?php self::t(_($this->topic->subject)); ?></h1>
+<?php if (!empty($subject)) { ?>
+    <header class="fixed">
+        <div class="title"><?php self::t($this->discuss->subject . ": " . _($subject)); ?></div>
+    </header>
+<?php } ?>
+
+<section class="discuss discuss-topic">
+    <h1><?php self::t(_("Topic") . ": " . _($subject)); ?></h1>
+    <?php if (count($this->threads) == 0) { ?>
+        <p><?php self::t(_("There are no threads in this topic yet.")); ?></p>
+    <?php } ?>
     <nav class="list threads">
         <ul>
             <?php foreach ($this->threads as $thread) {
@@ -24,6 +34,7 @@
             <?php } ?>
         </ul>
     </nav>
+
     <?php self::e($this->threadForm); ?>
     <div class="breadcrumps"><?php self::e($breadcrumps); ?></div>
 </section>

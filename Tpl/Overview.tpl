@@ -1,8 +1,12 @@
 <?php
     $breadcrumps = $this->discuss->renderBreadcrumpsTo($this->discuss);
 ?>
-<section class="discuss">
-    <h1><?php self::t($this->discuss->subject); ?></h1>
+<header class="fixed">
+    <div class="title"><?php self::t($this->discuss->subject . " / " . _("Topics")); ?></div>
+</header>
+
+<section class="discuss discuss-overview">
+    <h1><?php self::t($this->discuss->subject . " / " . _("Topics")); ?></h1>
     <nav class="list topics">
         <ul>
             <?php foreach ($this->topics as $topic) {
