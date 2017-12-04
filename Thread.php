@@ -271,6 +271,8 @@ class Thread extends \Depage\Entity\Entity
 
         $this->data['post'] = $post;
         $this->dirty['post'] = true;
+
+        return $this;
     }
     // }}}
 

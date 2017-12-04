@@ -5,12 +5,17 @@
 ?>
 <?php if (!empty($subject)) { ?>
     <header class="fixed">
-        <div class="title"><?php self::t($this->discuss->subject . ": " . _($subject)); ?></div>
+        <div class="title"><?php self::t($this->discuss->subject . " / " . _($subject)); ?></div>
     </header>
 <?php } ?>
 
 <section class="discuss discuss-topic">
-    <h1><?php self::t(_("Topic") . ": " . _($subject)); ?></h1>
+    <?php if (!empty($subject)) { ?>
+        <hgroup class="title">
+            <h1><?php self::t(_($subject)); ?></h1>
+            <h2><?php self::t(_($this->topic->description)); ?></h2>
+        </hgroup>
+    <?php } ?>
     <?php if (count($this->threads) == 0) { ?>
         <p><?php self::t(_("There are no threads in this topic yet.")); ?></p>
     <?php } ?>

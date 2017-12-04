@@ -2,11 +2,13 @@
     $breadcrumps = $this->discuss->renderBreadcrumpsTo($this->thread);
 ?>
 <header class="fixed">
-    <div class="title"><?php self::t($this->discuss->subject . ": " . $this->thread->subject); ?></div>
+    <div class="title"><?php self::t($this->discuss->subject . " / " . $this->thread->subject); ?></div>
 </header>
 
 <section class="discuss discuss-thread">
-    <h1><?php self::t($this->thread->subject); ?></h1>
+    <hgroup class="title">
+        <h1><?php self::t($this->thread->subject); ?></h1>
+    </hgroup>
     <article <?php self::attr([
         'class' => "thread",
     ]); ?>>

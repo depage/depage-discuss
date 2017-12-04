@@ -47,6 +47,7 @@ class Thread extends \Depage\HtmlForm\HtmlForm
             'label' => _("Title"),
             'class' => "title",
             'required' => true,
+            'maxlength' => 100,
         ]);
         $this->addRichtext("post", [
             'label' => _("Post"),

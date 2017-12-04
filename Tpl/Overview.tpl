@@ -6,7 +6,9 @@
 </header>
 
 <section class="discuss discuss-overview">
-    <h1><?php self::t($this->discuss->subject . " / " . _("Topics")); ?></h1>
+    <hgroup class="title">
+        <h1><?php self::t($this->discuss->subject . " / " . _("Topics")); ?></h1>
+    </hgroup>
     <nav class="list topics">
         <ul>
             <?php foreach ($this->topics as $topic) {
