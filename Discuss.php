@@ -324,6 +324,11 @@ class Discuss
         $topic = $this->loadTopicById($topicId);
         $this->breadcrumps = $this->renderBreadcrumpsTo($topic);
 
+        if (!$topic) {
+            return $this->notFound();
+        }
+
+
         if (!empty($this->user)) {
             $form = new Forms\Thread("new-thread-$topicId", [
             ]);
@@ -366,6 +371,10 @@ class Discuss
     {
         $thread = $this->loadThreadById($threadId);
         $this->breadcrumps = $this->renderBreadcrumpsTo($thread);
+
+        if (!$thread) {
+            return $this->notFound();
+        }
 
         if (!empty($this->user)) {
             $thread->processVote($this->user);
@@ -482,6 +491,18 @@ class Discuss
         }
 
         return $html;
+    }
+    // }}}
+    // {{{ notFound()
+    /**
+     * @brief notFound
+     *
+     * @param mixed
+     * @return void
+     **/
+    protected function notFound()
+    {
+        return "<p>" . _("Not found") . "</p>";
     }
     // }}}
 
