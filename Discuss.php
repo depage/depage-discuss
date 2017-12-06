@@ -462,10 +462,14 @@ class Discuss
      * @param mixed
      * @return void
      **/
-    public function renderThreadsByCurrentUser()
+    public function renderThreadsByCurrentUser($max = null)
     {
         $threads = $this->loadThreadsByCurrentUser();
         $user = $this->getCurrentUser();
+
+        if ($max !== null) {
+            $threads = array_slice($threads, 0, $max, true);
+        }
 
         if (count($threads) > 0) {
             $html = new Html("Topic.tpl", [
