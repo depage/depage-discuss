@@ -269,27 +269,6 @@ class Post extends \Depage\Entity\Entity
         $this->dirty['post'] = true;
     }
     // }}}
-    // {{{ notify()
-    /**
-     * @brief notify
-     *
-     * @param mixed $isNew
-     * @return void
-     **/
-    public function notify($isNew)
-    {
-        if ($isNew) {
-            $mentions = $this->getMentions();
-            foreach($mentions as $username) {
-                try {
-                    $user = \Depage\Auth\User::loadByUsername($this->pdo, $username);
-                    // @todo notify user but only if not post owner
-                } catch (\Exception $e) {
-                }
-            }
-        }
-    }
-    // }}}
     // {{{ getMentions()
     /**
      * @brief getMentions
@@ -301,7 +280,6 @@ class Post extends \Depage\Entity\Entity
     {
         $users = [];
         $text = strip_tags(str_replace("<", " <", $this->post));
-        echo($text);
 
         $count = preg_match_all("/@([_a-zA-Z0-9]+)/", $text, $matches);
 
@@ -361,8 +339,6 @@ class Post extends \Depage\Entity\Entity
             if ($success) {
                 $this->dirty = array_fill_keys(array_keys(static::$fields), false);
             }
-
-            $this->notify($isNew);
         }
     }
     // }}}
