@@ -396,7 +396,7 @@ class Discuss
             $form = $this->getLoginMessage($this->getLinkTo($thread));
         }
 
-        $posts = $thread->loadPosts(0, 1000);
+        $posts = $thread->loadPosts(0, 10000);
         $thread->setLastViewedPost($this->user, end($posts));
 
         $html = new Html("Thread.tpl", [

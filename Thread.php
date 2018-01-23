@@ -141,9 +141,9 @@ class Thread extends \Depage\Entity\Entity
 
     }
     // }}}
-    // {{{ loadByUserId()
+    // {{{ loadByUser()
     /**
-     * @brief loadByUserId
+     * @brief loadByUser
      *
      * @param mixed $
      * @return void
@@ -220,6 +220,61 @@ class Thread extends \Depage\Entity\Entity
         $posts = Post::loadByThread($this->pdo, $this->id, $from, $to);
 
         return $posts;
+    }
+    // }}}
+    // {{{ loadUsersToNotify()
+    /**
+     * @brief loadUsersToNotify
+     *
+     * @param mixed
+     * @return void
+     **/
+    public function loadUsersToNotify()
+    {
+        $users = [];
+
+        $params = [
+            "threadId1" => $this->id,
+            "threadId2" => $this->id,
+            "threadId3" => $this->id,
+            "threadId4" => $this->id,
+        ];
+
+        $query = $this->pdo->prepare(
+            "SELECT threadUserViews.uid FROM
+                (SELECT views.* FROM
+                    (SELECT
+                        thread.uid
+                    FROM
+                        {$this->pdo->prefix}_discuss_threads AS thread
+                    WHERE thread.id = :threadId1
+                    UNION DISTINCT
+                    SELECT
+                        post.uid
+                    FROM
+                        {$this->pdo->prefix}_discuss_posts AS post
+                    WHERE post.threadId = :threadId2) AS uids
+                INNER JOIN
+                    {$this->pdo->prefix}_discuss_thread_views as views
+                    ON uids.uid = views.uid
+                WHERE views.threadId = :threadId3
+                ) AS threadUserViews
+            JOIN
+                {$this->pdo->prefix}_discuss_posts AS post2
+                ON threadUserViews.threadId = post2.threadId
+            WHERE postDate > viewDate
+                AND post2.threadId = :threadId4
+            GROUP BY threadUserViews.uid
+            HAVING COUNT(post2.threadId) = 1
+            "
+        );
+        $query->execute($params);
+
+        while ($uid = $query->fetchColumn()) {
+            $users[$uid] = \Depage\Auth\User::loadById($this->pdo, $uid);
+        }
+
+        return $users;
     }
     // }}}
     // {{{ addPost()
