@@ -421,8 +421,13 @@ class Thread extends \Depage\Entity\Entity
      **/
     public function setLastViewedPost($user, $post)
     {
-        if (!$user || !$post) {
+        if (!$user) {
             return false;
+        }
+        if (!$post) {
+            $postId = NULL;
+        } else {
+            $postId = $post->id;
         }
 
         $query = $this->pdo->prepare("
@@ -436,7 +441,7 @@ class Thread extends \Depage\Entity\Entity
         return $query->execute([
             'uid' => $user->id,
             'threadId' => $this->id,
-            'postId' => $post->id,
+            'postId' => $postId,
         ]);
     }
     // }}}

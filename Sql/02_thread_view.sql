@@ -22,3 +22,8 @@ CREATE TABLE `_discuss_thread_views` (
     @version 1.5.6.7
 */
 ALTER TABLE `_discuss_thread_views` ADD COLUMN `viewDate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER postId;
+
+/*
+    @version 1.5.6.8
+*/
+ALTER TABLE `_discuss_thread_views` CHANGE COLUMN `postId` `postId` int(11) unsigned;
