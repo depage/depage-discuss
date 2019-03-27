@@ -27,7 +27,7 @@
                 <time><?php self::t(self::formatDateNatural($this->thread->postDate, true)); ?></time>
             </header>
             <div class="content">
-                <?php self::e($this->thread->post); ?>
+                <?php self::e($this->discuss->replaceUserHandles($this->thread->post)); ?>
             </div>
             <footer>
                 <?php if(!empty($this->user)) { ?>
@@ -57,7 +57,7 @@
                     <time><?php self::t(self::formatDateNatural($post->postDate, true)); ?></time>
                 </header>
                 <div class="content">
-                    <?php self::e($post->post); ?>
+                    <?php self::e($this->discuss->replaceUserHandles($post->post)); ?>
                 </div>
                 <footer>
                     <?php if(!empty($this->user)) { ?>

@@ -493,6 +493,36 @@ class Discuss
         return $html;
     }
     // }}}
+    // {{{ replaceUserHandles()
+    /**
+     * @brief replaceUserHandles
+     *
+     * @param mixed $post
+     * @return void
+     **/
+    public function replaceUserHandles($post)
+    {
+        // removed linked handles
+        $post = preg_replace("/<a[^>]*>(@[_a-zA-Z0-9]+)<\/a>/i", '${1}', $post);
+
+        // replace handles with linked handles
+        $post = preg_replace_callback("/@([_a-zA-Z0-9]+)/i", function($matches) {
+            $username = $matches[1];
+
+            try {
+                $user = \Depage\Auth\User::loadByUsername($this->pdo, $username);
+                $link = $this->getLinkTo($user);
+
+                return "<a href=\"$link\">@$username</a>";
+            } catch (\Exception $e) {
+            }
+
+            return $username;
+        }, $post);
+
+        return $post;
+    }
+    // }}}
     // {{{ notFound()
     /**
      * @brief notFound
