@@ -330,6 +330,21 @@ class Thread extends \Depage\Entity\Entity
         return $this;
     }
     // }}}
+    // {{{ setVisible()
+    /**
+     * @brief setVisible
+     *
+     * @param mixed $value
+     * @return void
+     **/
+    protected function setVisible($value)
+    {
+        $this->data['visible'] = (int) $value;
+        $this->dirty['visible'] = true;
+
+        return $this;
+    }
+    // }}}
 
     // {{{ save()
     /**

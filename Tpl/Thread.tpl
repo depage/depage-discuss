@@ -20,6 +20,7 @@
                 $upvotes = $this->thread->getUpvotes();
                 $downvotes = $this->thread->getDownvotes();
                 $sum = $upvotes - $downvotes;
+                $canVote = !empty($this->user) && $this->thread->uid != $this->user->id;
             ?>
             <header>
                 <?php self::e($this->discuss->htmlUserInfo($this->thread->uid)); ?>
@@ -30,7 +31,7 @@
             </div>
             <footer>
                 <?php if(!empty($this->user)) { ?>
-                    <div class="votes">
+                    <div class="votes <?php if ($canVote) self::t("can-vote"); ?>">
                         <span class="sum"><?php self::t($sum); ?></span>
                         <span class="up"><?php self::t($upvotes); ?></span>
                         <span class="down"><?php self::t($downvotes); ?></span>

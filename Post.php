@@ -269,6 +269,21 @@ class Post extends \Depage\Entity\Entity
         $this->dirty['post'] = true;
     }
     // }}}
+    // {{{ setVisible()
+    /**
+     * @brief setVisible
+     *
+     * @param mixed $value
+     * @return void
+     **/
+    protected function setVisible($value)
+    {
+        $this->data['visible'] = (int) $value;
+        $this->dirty['visible'] = true;
+
+        return $this;
+    }
+    // }}}
     // {{{ getMentions()
     /**
      * @brief getMentions
@@ -290,6 +305,28 @@ class Post extends \Depage\Entity\Entity
         }
 
         return array_keys($users);
+    }
+    // }}}
+    // {{{ loadMentionedUsers()
+    /**
+     * @brief loadMentionedUsers
+     *
+     * @param mixed
+     * @return void
+     **/
+    public function loadMentionedUsers()
+    {
+        $mentions = $this->getMentions();
+
+        foreach($mentions as $username) {
+            try {
+                $u = \Depage\Auth\User::loadByUsername($this->pdo, $username);
+                $users[$u->id] = $u;
+            } catch (\Exception $e) {
+            }
+        }
+
+        return $users;
     }
     // }}}
 
