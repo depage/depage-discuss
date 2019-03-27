@@ -317,10 +317,11 @@ class Post extends \Depage\Entity\Entity
     public function loadMentionedUsers()
     {
         $mentions = $this->getMentions();
+        $users = [];
 
         foreach($mentions as $username) {
             try {
-                $u = \Depage\Auth\User::loadByUsername($this->pdo, $username);
+                $u = \Depage\Auth\CachedUser::loadByUsername($this->pdo, $username);
                 $users[$u->id] = $u;
             } catch (\Exception $e) {
             }

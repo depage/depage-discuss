@@ -271,7 +271,7 @@ class Thread extends \Depage\Entity\Entity
         $query->execute($params);
 
         while ($uid = $query->fetchColumn()) {
-            $users[$uid] = \Depage\Auth\User::loadById($this->pdo, $uid);
+            $users[$uid] = \Depage\Auth\CachedUser::loadById($this->pdo, $uid);
         }
 
         return $users;

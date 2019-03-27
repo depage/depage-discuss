@@ -453,7 +453,7 @@ class Discuss
         static $snippets = [];
 
         if (!isset($snippets[$uid])) {
-            $user = \Depage\Auth\User::loadById($this->pdo, $uid);
+            $user = \Depage\Auth\CachedUser::loadById($this->pdo, $uid);
 
             $snippets[$uid] = (string) new Html('UserInfo.tpl', [
                 'discuss' => $this,
@@ -510,7 +510,7 @@ class Discuss
             $username = $matches[1];
 
             try {
-                $user = \Depage\Auth\User::loadByUsername($this->pdo, $username);
+                $user = \Depage\Auth\CachedUser::loadByUsername($this->pdo, $username);
                 $link = $this->getLinkTo($user);
 
                 return "<a href=\"$link\">@$username</a>";
