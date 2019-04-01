@@ -561,6 +561,53 @@ class Discuss
     }
     // }}}
 
+    // {{{ parseMentions()
+    /**
+     * @brief parseMentions
+     *
+     * @param mixed $post
+     * @return void
+     **/
+    public static function parseMentions($post)
+    {
+        $users = [];
+        $text = strip_tags(str_replace("<", " <", $post));
+
+        $count = preg_match_all("/@([_a-zA-Z0-9]+)/", $text, $matches);
+
+        if ($count > 0) {
+            foreach($matches[1] as $username) {
+                $users[$username] = true;
+            }
+        }
+
+        return array_keys($users);
+    }
+    // }}}
+    // {{{ loadMentionsUsers()
+    /**
+     * @brief loadMentionedUsers
+     *
+     * @param mixed $pdo, $post
+     * @return void
+     **/
+    public static function loadMentionedUsers($pdo, $post)
+    {
+        $users = [];
+        $mentions = Discuss::parseMentions($post);
+
+        foreach($mentions as $username) {
+            try {
+                $u = \Depage\Auth\CachedUser::loadByUsername($pdo, $username);
+                $users[$u->id] = $u;
+            } catch (\Exception $e) {
+            }
+        }
+
+        return $users;
+    }
+    // }}}
+
     // {{{ __toString()
     /**
      * @brief __toString

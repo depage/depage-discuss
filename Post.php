@@ -284,53 +284,6 @@ class Post extends \Depage\Entity\Entity
         return $this;
     }
     // }}}
-    // {{{ getMentions()
-    /**
-     * @brief getMentions
-     *
-     * @param mixed
-     * @return void
-     **/
-    public function getMentions()
-    {
-        $users = [];
-        $text = strip_tags(str_replace("<", " <", $this->post));
-
-        $count = preg_match_all("/@([_a-zA-Z0-9]+)/", $text, $matches);
-
-        if ($count > 0) {
-            foreach($matches[1] as $username) {
-                $users[$username] = true;
-            }
-        }
-
-        return array_keys($users);
-    }
-    // }}}
-    // {{{ loadMentionedUsers()
-    /**
-     * @brief loadMentionedUsers
-     *
-     * @param mixed
-     * @return void
-     **/
-    public function loadMentionedUsers()
-    {
-        $mentions = $this->getMentions();
-        $users = [];
-
-        foreach($mentions as $username) {
-            try {
-                $u = \Depage\Auth\CachedUser::loadByUsername($this->pdo, $username);
-                $users[$u->id] = $u;
-            } catch (\Exception $e) {
-            }
-        }
-
-        return $users;
-    }
-    // }}}
-
     // {{{ save()
     /**
      * save a notification object
