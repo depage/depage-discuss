@@ -139,6 +139,52 @@ class Post extends \Depage\Entity\Entity
 
     }
     // }}}
+    // {{{ loadByUser()
+    /**
+     * @brief loadByUser
+     *
+     * @param mixed $
+     * @return void
+     **/
+    public static function loadByUser($pdo, $user)
+    {
+        $fields = "post." . implode(", post.", self::getFields());
+        $params = [
+            "uid1" => $user->id,
+            "uid2" => $user->id,
+        ];
+
+        $query = $pdo->prepare(
+            "SELECT
+                post2.*,
+                IFNULL(SUM(vote.upvote), 0) AS upvotes,
+                IFNULL(SUM(vote.downvote), 0) AS downvotes
+            FROM
+                (SELECT post.*
+                    FROM
+                    sd_discuss_posts AS post
+                        RIGHT JOIN sd_discuss_threads AS thread
+                            ON thread.id = post.threadId
+                    WHERE
+                        (thread.uid = :uid1 OR post.uid = :uid2)
+                        AND thread.topicId IS NOT NULL
+                    ORDER BY thread.lastPostDate DESC
+                ) AS post2
+                LEFT JOIN sd_discuss_post_votes AS vote
+            ON post2.id = vote.id
+            GROUP BY post2.id
+            ORDER BY post2.postDate ASC
+            "
+        );
+        $query->execute($params);
+
+        // pass pdo-instance to constructor
+        $query->setFetchMode(\PDO::FETCH_CLASS, get_called_class(), array($pdo));
+        $posts = $query->fetchAll();
+
+        return $posts;
+    }
+    // }}}
     // {{{ loadByUserLastViewed()
     /**
      * @brief loadByUserLastViewed

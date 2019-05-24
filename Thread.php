@@ -161,7 +161,7 @@ class Thread extends \Depage\Entity\Entity
             FROM
                 {$pdo->prefix}_discuss_threads AS thread
                 LEFT JOIN {$pdo->prefix}_discuss_posts AS post
-                ON thread.id = post.threadId
+                    ON thread.id = post.threadId
             WHERE
                 (thread.uid = :uid1 OR post.uid = :uid2)
                 AND thread.topicId IS NOT NULL
@@ -175,7 +175,6 @@ class Thread extends \Depage\Entity\Entity
         $threads = $query->fetchAll();
 
         return $threads;
-
     }
     // }}}
 

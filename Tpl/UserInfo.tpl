@@ -3,7 +3,7 @@
     $handle = "@" . $this->user->name;
 ?>
 <a class="profile-image" href="<?php self::t($link); ?>">
-    <img src="<?php self::t($this->discuss->getProfileImage($this->user)); ?>" alt="<?php self::t($handle); ?>">
+    <span><img src="<?php self::t($this->discuss->getProfileImage($this->user)); ?>" alt="<?php self::t($handle); ?>"></span>
 </a>
 
 <a class="username" href="<?php self::t($link); ?>"><?php self::t($handle); ?></a>
