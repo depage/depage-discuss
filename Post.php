@@ -146,13 +146,19 @@ class Post extends \Depage\Entity\Entity
      * @param mixed $
      * @return void
      **/
-    public static function loadByUser($pdo, $user)
+    public static function loadByUser($pdo, $user, $range = null)
     {
         $fields = "post." . implode(", post.", self::getFields());
         $params = [
-            "uid1" => $user->id,
-            "uid2" => $user->id,
+            "uid" => $user->id,
         ];
+        $where = "";
+
+        if (!is_null($range)) {
+            $params["from"] = $range->getStartDate()->format("Y-m-d");
+            $params["to"] = $range->getEndDate()->format("Y-m-d");
+            $where = "AND post.postDate >= :from AND post.postDate < :to";
+        }
 
         $query = $pdo->prepare(
             "SELECT
@@ -163,11 +169,12 @@ class Post extends \Depage\Entity\Entity
                 (SELECT post.*
                     FROM
                     sd_discuss_posts AS post
-                        RIGHT JOIN sd_discuss_threads AS thread
+                        JOIN sd_discuss_threads AS thread
                             ON thread.id = post.threadId
                     WHERE
-                        (thread.uid = :uid1 OR post.uid = :uid2)
+                        post.uid = :uid
                         AND thread.topicId IS NOT NULL
+                        $where
                     ORDER BY thread.lastPostDate DESC
                 ) AS post2
                 LEFT JOIN sd_discuss_post_votes AS vote

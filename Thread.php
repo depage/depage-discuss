@@ -11,6 +11,8 @@
 
 namespace Depage\Discuss;
 
+use intrawarez\dateranges\DateRange as DateRange;
+
 /**
  * @brief Thread
  * Class Thread
@@ -148,13 +150,20 @@ class Thread extends \Depage\Entity\Entity
      * @param mixed $
      * @return void
      **/
-    public static function loadByUser($pdo, $user)
+    public static function loadByUser($pdo, $user, $range = null)
     {
         $fields = "thread." . implode(", thread.", self::getFields());
         $params = [
             "uid1" => $user->id,
             "uid2" => $user->id,
         ];
+        $where = "";
+
+        if (!is_null($range)) {
+            $params["from"] = $range->getStartDate()->format("Y-m-d");
+            $params["to"] = $range->getEndDate()->format("Y-m-d");
+            $where = "AND thread.postDate >= :from AND thread.postDate < :to";
+        }
 
         $query = $pdo->prepare(
             "SELECT $fields
@@ -165,6 +174,7 @@ class Thread extends \Depage\Entity\Entity
             WHERE
                 (thread.uid = :uid1 OR post.uid = :uid2)
                 AND thread.topicId IS NOT NULL
+                $where
             GROUP BY thread.id
             ORDER BY thread.lastPostDate DESC"
         );

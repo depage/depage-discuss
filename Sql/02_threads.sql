@@ -35,3 +35,8 @@ ALTER TABLE `_discuss_threads` ADD COLUMN `lastPostDate` timestamp NULL DEFAULT 
     @version 1.5.6.3
 */
 ALTER TABLE `_discuss_threads` ADD COLUMN `visible` tinyint(1) NOT NULL DEFAULT 1 AFTER sticky;
+
+/*
+    @version 1.5.6.4
+*/
+ALTER TABLE `_discuss_threads` ADD KEY publishing (postDate);
