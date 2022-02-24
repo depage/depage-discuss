@@ -238,9 +238,10 @@ class Thread extends \Depage\Entity\Entity
      * @param mixed
      * @return void
      **/
-    public function loadUsersToNotify()
+    public function loadUsersToNotify($additionalUsers = [])
     {
         $users = [];
+        $union = "";
 
         $params = [
             "threadId1" => $this->id,
@@ -248,6 +249,13 @@ class Thread extends \Depage\Entity\Entity
             "threadId3" => $this->id,
             "threadId4" => $this->id,
         ];
+        $i = 0;
+        foreach ($additionalUsers as $u) {
+            $i++;
+            $params["uId$i"] = $u->id;
+            $union .= " UNION DISTINCT SELECT :uId$i";
+        }
+
 
         $query = $this->pdo->prepare(
             "SELECT threadUserViews.uid FROM
@@ -262,7 +270,9 @@ class Thread extends \Depage\Entity\Entity
                         post.uid
                     FROM
                         {$this->pdo->prefix}_discuss_posts AS post
-                    WHERE post.threadId = :threadId2) AS uids
+                    WHERE post.threadId = :threadId2
+                    {$union}
+                    ) AS uids
                 INNER JOIN
                     {$this->pdo->prefix}_discuss_thread_views as views
                     ON uids.uid = views.uid

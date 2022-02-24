@@ -27,7 +27,7 @@ class Post extends \Depage\HtmlForm\HtmlForm
     public function __construct($name, $params = [])
     {
         $params['class'] = "new-post labels-on-top";
-        $params['label'] = _("Leave your comment");
+        $params['label'] = $params['label'] ?? _("Leave your comment");
 
         parent::__construct($name, $params);
 

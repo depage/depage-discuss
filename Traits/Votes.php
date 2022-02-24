@@ -35,7 +35,7 @@ trait Votes
      **/
     public function getUpvotes()
     {
-        return $this->upvotes;
+        return (int) $this->upvotes;
 
     }
     // }}}
@@ -47,7 +47,7 @@ trait Votes
      **/
     public function getDownvotes()
     {
-        return $this->downvotes;
+        return (int) $this->downvotes;
     }
     // }}}
 
