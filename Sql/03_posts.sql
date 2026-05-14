@@ -24,3 +24,8 @@ CREATE TABLE `_discuss_posts` (
     @version 1.5.6.3
 */
 ALTER TABLE `_discuss_posts` ADD COLUMN `visible` tinyint(1) NOT NULL DEFAULT 1 AFTER editDate;
+
+/*
+    @version 1.5.6.4
+*/
+ALTER TABLE `_discuss_posts` ADD KEY publishing (postDate);

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file    Thread.php
  *
@@ -26,9 +27,9 @@ class Thread extends \Depage\HtmlForm\HtmlForm
      **/
     public function __construct($name, $params = [])
     {
-        if (!isset($params['class'])) $params['class'] = "";
-
+        $params['class'] = $params['class'] ?? "";
         $params['class'] .= " new-post labels-on-top";
+        $params['label'] = _("Post new thread");
 
         parent::__construct($name, $params);
 
@@ -41,12 +42,17 @@ class Thread extends \Depage\HtmlForm\HtmlForm
      * @param mixed
      * @return void
      **/
-    public function addChildElements()
+    public function addChildElements(): void
     {
         $this->addText("subject", [
+            'label' => _("Title"),
+            'class' => "title",
             'required' => true,
+            'maxlength' => 100,
         ]);
         $this->addRichtext("post", [
+            'label' => _("Post"),
+            'class' => "post",
             'required' => true,
             'autogrow' => true,
             'allowedTags' => [

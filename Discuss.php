@@ -35,6 +35,26 @@ class Discuss
      **/
     protected $baseUrl = "";
 
+    /**
+     * @brief breadcrumps
+     **/
+    public $breadcrumps = "";
+
+    /**
+     * @brief subject
+     **/
+    public $subject = "";
+
+    /**
+     * @brief htmlOptions
+     **/
+    public $htmlOptions = [];
+
+    /**
+     * @brief pdo
+     **/
+    protected $pdo = null;
+
     // {{{ __construct()
     /**
      * @brief __construct
@@ -50,6 +70,7 @@ class Discuss
             'clean' => "space",
         ];
         $this->baseUrl = parse_url($_SERVER['REQUEST_URI'], \PHP_URL_PATH);
+        $this->subject = _("Forum");
     }
     // }}}
     // {{{ updateSchema()
@@ -186,7 +207,9 @@ class Discuss
     {
         $action = "";
         $hash = "";
-        if ($object instanceof Topic) {
+        if ($object instanceof \Depage\Discuss\Discuss) {
+            return $this->baseUrl;
+        } else if ($object instanceof Topic) {
             $action = "topic";
             $id = $object->id;
         } else if ($object instanceof Thread) {
@@ -231,7 +254,7 @@ class Discuss
      * @param mixed
      * @return void
      **/
-    public function getLoginMessage()
+    public function getLoginMessage($srcUrl)
     {
         return "";
     }
@@ -288,6 +311,8 @@ class Discuss
     {
         $topics = $this->loadAllTopics();
 
+        $this->breadcrumps = $this->renderBreadcrumpsTo($this);
+
         $html = new Html("Overview.tpl", [
             'discuss' => $this,
             'topics' => $topics,
@@ -307,6 +332,12 @@ class Discuss
     public function renderTopic($topicId)
     {
         $topic = $this->loadTopicById($topicId);
+        $this->breadcrumps = $this->renderBreadcrumpsTo($topic);
+
+        if (!$topic) {
+            return $this->notFound();
+        }
+
 
         if (!empty($this->user)) {
             $form = new Forms\Thread("new-thread-$topicId", [
@@ -317,13 +348,14 @@ class Discuss
                 $values = $form->getValues();
 
                 $thread = $topic->addThread($values['subject'], (string) $values['post'], $this->user->id);
+                $this->onThreadAdded($thread);
 
                 $form->clearSession();
 
                 self::redirect($this->getLinkTo($thread));
             }
         } else {
-            $form = $this->getLoginMessage();
+            $form = $this->getLoginMessage($this->getLinkTo($topic));
         }
         $threads = $topic->loadAllThreads();
 
@@ -348,6 +380,11 @@ class Discuss
     public function renderThread($threadId)
     {
         $thread = $this->loadThreadById($threadId);
+        $this->breadcrumps = $this->renderBreadcrumpsTo($thread);
+
+        if (!$thread) {
+            return $this->notFound();
+        }
 
         if (!empty($this->user)) {
             $thread->processVote($this->user);
@@ -359,16 +396,17 @@ class Discuss
                 $values = $form->getValues();
 
                 $post = $thread->addPost($values['post'], $this->user->id);
+                $this->onPostAdded($post);
 
                 $form->clearSession();
 
                 self::redirect($this->getLinkTo($post));
             }
         } else {
-            $form = $this->getLoginMessage();
+            $form = $this->getLoginMessage($this->getLinkTo($thread));
         }
 
-        $posts = $thread->loadPosts(0, 1000);
+        $posts = $thread->loadPosts(0, 10000);
         $thread->setLastViewedPost($this->user, end($posts));
 
         $html = new Html("Thread.tpl", [
@@ -382,27 +420,58 @@ class Discuss
         return $html;
     }
     // }}}
-    // {{{ renderUserInfo()
+    // {{{ renderBreadcrumpsTo()
     /**
-     * @brief renderUserInfo
+     * @brief renderBreadcrumpsTo
+     *
+     * @param mixed
+     * @return void
+     **/
+    public function renderBreadcrumpsTo($object)
+    {
+        if (!$object) return "";
+
+        $html = "";
+
+        if ($object instanceof Topic) {
+            $html .= $this->renderBreadcrumpsTo($this);
+        } else if ($object instanceof Thread) {
+            $topic = Topic::loadById($this->pdo, $object->topicId);
+            $html .= $this->renderBreadcrumpsTo($topic);
+        }
+
+        $link = $this->getLinkTo($object);
+        if ($object instanceof Topic) {
+            $subject = _($object->subject);
+        } else {
+            $subject = $object->subject;
+        }
+        $html .= "<a href=\"$link\">" . htmlspecialchars($subject) . "</a> ";
+
+        return $html;
+    }
+    // }}}
+    // {{{ htmlUserInfo()
+    /**
+     * @brief htmlUserInfo
      *
      * @param mixed $uid
      * @return void
      **/
-    public function renderUserInfo($uid)
+    public function htmlUserInfo($uid)
     {
         static $snippets = [];
 
         if (!isset($snippets[$uid])) {
-            $user = \Depage\Auth\User::loadById($this->pdo, $uid);
+            $user = \Depage\Auth\CachedUser::loadById($this->pdo, $uid);
 
-            $snippets[$uid] = new Html('UserInfo.tpl', [
+            $snippets[$uid] = (string) new Html('UserInfo.tpl', [
                 'discuss' => $this,
                 'user' => $user,
             ], $this->htmlOptions);
         }
 
-        echo($snippets[$uid]);
+        return $snippets[$uid];
     }
     // }}}
     // {{{ renderThreadsByCurrentUser()
@@ -412,10 +481,14 @@ class Discuss
      * @param mixed
      * @return void
      **/
-    public function renderThreadsByCurrentUser()
+    public function renderThreadsByCurrentUser($max = null)
     {
         $threads = $this->loadThreadsByCurrentUser();
         $user = $this->getCurrentUser();
+
+        if ($max !== null) {
+            $threads = array_slice($threads, 0, $max, true);
+        }
 
         if (count($threads) > 0) {
             $html = new Html("Topic.tpl", [
@@ -428,6 +501,120 @@ class Discuss
         }
 
         return $html;
+    }
+    // }}}
+    // {{{ replaceUserHandles()
+    /**
+     * @brief replaceUserHandles
+     *
+     * @param mixed $post
+     * @return void
+     **/
+    public function replaceUserHandles($post)
+    {
+        // removed linked handles
+        $post = preg_replace("/<a[^>]*>(@[_a-zA-Z0-9]+)<\/a>/i", '${1}', $post);
+
+        // replace handles with linked handles
+        $post = preg_replace_callback("/@([_a-zA-Z0-9]+)/i", function($matches) {
+            $username = $matches[1];
+
+            try {
+                $user = \Depage\Auth\CachedUser::loadByUsername($this->pdo, $username);
+                $link = $this->getLinkTo($user);
+
+                return "<a href=\"$link\">@$username</a>";
+            } catch (\Exception $e) {
+            }
+
+            return $username;
+        }, $post);
+
+        return $post;
+    }
+    // }}}
+    // {{{ notFound()
+    /**
+     * @brief notFound
+     *
+     * @param mixed
+     * @return void
+     **/
+    protected function notFound()
+    {
+        return "<p>" . _("Not found") . "</p>";
+    }
+    // }}}
+
+    // {{{ onThreadAdded()
+    /**
+     * @brief onThreadAdded
+     *
+     * @param mixed
+     * @return void
+     **/
+    protected function onThreadAdded($thread)
+    {
+
+    }
+    // }}}
+    // {{{ onPostAdded()
+    /**
+     * @brief onPostAdded
+     *
+     * @param mixed
+     * @return void
+     **/
+    protected function onPostAdded($post)
+    {
+
+    }
+    // }}}
+
+    // {{{ parseMentions()
+    /**
+     * @brief parseMentions
+     *
+     * @param mixed $post
+     * @return void
+     **/
+    public static function parseMentions($post)
+    {
+        $users = [];
+        $text = strip_tags(str_replace("<", " <", $post));
+
+        $count = preg_match_all("/@([_a-zA-Z0-9]+)/", $text, $matches);
+
+        if ($count > 0) {
+            foreach($matches[1] as $username) {
+                $users[$username] = true;
+            }
+        }
+
+        return array_keys($users);
+    }
+    // }}}
+    // {{{ loadMentionsUsers()
+    /**
+     * @brief loadMentionedUsers
+     *
+     * @param mixed $pdo, $post
+     * @return void
+     **/
+    public static function loadMentionedUsers($pdo, $post)
+    {
+        $users = [];
+        $mentions = Discuss::parseMentions($post);
+
+        foreach($mentions as $username) {
+            try {
+                $u = \Depage\Auth\CachedUser::loadByUsername($pdo, $username);
+                $users[$u->id] = $u;
+            } catch (\Exception $e) {
+            }
+        }
+
+        return $users;
     }
     // }}}
 

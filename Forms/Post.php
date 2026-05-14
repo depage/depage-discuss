@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file    Post.php
  *
@@ -27,6 +28,7 @@ class Post extends \Depage\HtmlForm\HtmlForm
     public function __construct($name, $params = [])
     {
         $params['class'] = "new-post labels-on-top";
+        $params['label'] = $params['label'] ?? _("Leave your comment");
 
         parent::__construct($name, $params);
 
@@ -39,9 +41,11 @@ class Post extends \Depage\HtmlForm\HtmlForm
      * @param mixed
      * @return void
      **/
-    public function addChildElements()
+    public function addChildElements(): void
     {
         $this->addRichtext("post", [
+            'label' => _("Post"),
+            'class' => "post",
             'required' => true,
             'autogrow' => true,
             'allowedTags' => [

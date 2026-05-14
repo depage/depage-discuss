@@ -91,12 +91,13 @@ class Thread extends \Depage\Entity\Entity
                 LEFT JOIN {$pdo->prefix}" . self::$voteTable . " AS vote
                 ON thread.id = vote.id
             WHERE thread.topicId = :topicId
+            GROUP BY thread.id
             ORDER BY thread.sticky DESC, thread.lastPostDate DESC"
         );
         $query->execute($params);
 
         // pass pdo-instance to constructor
-        $query->setFetchMode(\PDO::FETCH_CLASS, get_called_class(), array($pdo));
+        $query->setFetchMode(\PDO::FETCH_CLASS, get_called_class(), [$pdo]);
         $thread = $query->fetchAll();
 
         return $thread;
@@ -140,30 +141,38 @@ class Thread extends \Depage\Entity\Entity
 
     }
     // }}}
-    // {{{ loadByUserId()
+    // {{{ loadByUser()
     /**
-     * @brief loadByUserId
+     * @brief loadByUser
      *
      * @param mixed $
      * @return void
      **/
-    public static function loadByUser($pdo, $user)
+    public static function loadByUser($pdo, $user, $range = null)
     {
         $fields = "thread." . implode(", thread.", self::getFields());
         $params = [
             "uid1" => $user->id,
             "uid2" => $user->id,
         ];
+        $where = "";
+
+        if (!is_null($range)) {
+            $params["from"] = $range->getStartDate()->format("Y-m-d");
+            $params["to"] = $range->getEndDate()->format("Y-m-d");
+            $where = "AND thread.postDate >= :from AND thread.postDate < :to";
+        }
 
         $query = $pdo->prepare(
             "SELECT $fields
             FROM
                 {$pdo->prefix}_discuss_threads AS thread
                 LEFT JOIN {$pdo->prefix}_discuss_posts AS post
-                ON thread.id = post.threadId
+                    ON thread.id = post.threadId
             WHERE
                 (thread.uid = :uid1 OR post.uid = :uid2)
                 AND thread.topicId IS NOT NULL
+                $where
             GROUP BY thread.id
             ORDER BY thread.lastPostDate DESC"
         );
@@ -174,6 +183,34 @@ class Thread extends \Depage\Entity\Entity
         $threads = $query->fetchAll();
 
         return $threads;
+    }
+    // }}}
+
+    // {{{ countByTopic()
+    /**
+     * @brief countByTopic
+     *
+     * @param mixed $
+     * @return void
+     **/
+    public static function countByTopic($pdo, $topicId)
+    {
+        $params = [
+            "topicId" => $topicId,
+        ];
+
+        $query = $pdo->prepare(
+            "SELECT
+                COUNT(*)
+            FROM
+                {$pdo->prefix}_discuss_threads AS thread
+            WHERE thread.topicId = :topicId"
+        );
+        $query->execute($params);
+
+        $count = $query->fetchColumn();
+
+        return $count;
 
     }
     // }}}
@@ -190,6 +227,71 @@ class Thread extends \Depage\Entity\Entity
         $posts = Post::loadByThread($this->pdo, $this->id, $from, $to);
 
         return $posts;
+    }
+    // }}}
+    // {{{ loadUsersToNotify()
+    /**
+     * @brief loadUsersToNotify
+     *
+     * @param mixed
+     * @return void
+     **/
+    public function loadUsersToNotify($additionalUsers = [])
+    {
+        $users = [];
+        $union = "";
+
+        $params = [
+            "threadId1" => $this->id,
+            "threadId2" => $this->id,
+            "threadId3" => $this->id,
+            "threadId4" => $this->id,
+        ];
+        $i = 0;
+        foreach ($additionalUsers as $u) {
+            $i++;
+            $params["uId$i"] = $u->id;
+            $union .= " UNION DISTINCT SELECT :uId$i";
+        }
+
+
+        $query = $this->pdo->prepare(
+            "SELECT threadUserViews.uid FROM
+                (SELECT views.* FROM
+                    (SELECT
+                        thread.uid
+                    FROM
+                        {$this->pdo->prefix}_discuss_threads AS thread
+                    WHERE thread.id = :threadId1
+                    UNION DISTINCT
+                    SELECT
+                        post.uid
+                    FROM
+                        {$this->pdo->prefix}_discuss_posts AS post
+                    WHERE post.threadId = :threadId2
+                    {$union}
+                    ) AS uids
+                INNER JOIN
+                    {$this->pdo->prefix}_discuss_thread_views as views
+                    ON uids.uid = views.uid
+                WHERE views.threadId = :threadId3
+                ) AS threadUserViews
+            JOIN
+                {$this->pdo->prefix}_discuss_posts AS post2
+                ON threadUserViews.threadId = post2.threadId
+            WHERE postDate > viewDate
+                AND post2.threadId = :threadId4
+            GROUP BY threadUserViews.uid
+            HAVING COUNT(post2.threadId) = 1
+            "
+        );
+        $query->execute($params);
+
+        while ($uid = $query->fetchColumn()) {
+            $users[$uid] = \Depage\Auth\CachedUser::loadById($this->pdo, $uid);
+        }
+
+        return $users;
     }
     // }}}
     // {{{ addPost()
@@ -213,6 +315,19 @@ class Thread extends \Depage\Entity\Entity
     }
     // }}}
 
+    // {{{ getNumPosts()
+    /**
+     * @brief getNumPosts
+     *
+     * @param mixed
+     * @return void
+     **/
+    public function getNumPosts()
+    {
+        return Post::countByThread($this->pdo, $this->id);
+    }
+    // }}}
+
     // {{{ setPost()
     /**
      * @brief setPost
@@ -228,6 +343,23 @@ class Thread extends \Depage\Entity\Entity
 
         $this->data['post'] = $post;
         $this->dirty['post'] = true;
+
+        return $this;
+    }
+    // }}}
+    // {{{ setVisible()
+    /**
+     * @brief setVisible
+     *
+     * @param mixed $value
+     * @return void
+     **/
+    protected function setVisible($value)
+    {
+        $this->data['visible'] = (int) $value;
+        $this->dirty['visible'] = true;
+
+        return $this;
     }
     // }}}
 
@@ -321,8 +453,13 @@ class Thread extends \Depage\Entity\Entity
      **/
     public function setLastViewedPost($user, $post)
     {
-        if (!$user || !$post) {
+        if (!$user) {
             return false;
+        }
+        if (!$post) {
+            $postId = NULL;
+        } else {
+            $postId = $post->id;
         }
 
         $query = $this->pdo->prepare("
@@ -336,7 +473,7 @@ class Thread extends \Depage\Entity\Entity
         return $query->execute([
             'uid' => $user->id,
             'threadId' => $this->id,
-            'postId' => $post->id,
+            'postId' => $postId,
         ]);
     }
     // }}}

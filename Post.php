@@ -139,6 +139,59 @@ class Post extends \Depage\Entity\Entity
 
     }
     // }}}
+    // {{{ loadByUser()
+    /**
+     * @brief loadByUser
+     *
+     * @param mixed $
+     * @return void
+     **/
+    public static function loadByUser($pdo, $user, $range = null)
+    {
+        $fields = "post." . implode(", post.", self::getFields());
+        $params = [
+            "uid" => $user->id,
+        ];
+        $where = "";
+
+        if (!is_null($range)) {
+            $params["from"] = $range->getStartDate()->format("Y-m-d");
+            $params["to"] = $range->getEndDate()->format("Y-m-d");
+            $where = "AND post.postDate >= :from AND post.postDate < :to";
+        }
+
+        $query = $pdo->prepare(
+            "SELECT
+                post2.*,
+                IFNULL(SUM(vote.upvote), 0) AS upvotes,
+                IFNULL(SUM(vote.downvote), 0) AS downvotes
+            FROM
+                (SELECT post.*
+                    FROM
+                    sd_discuss_posts AS post
+                        JOIN sd_discuss_threads AS thread
+                            ON thread.id = post.threadId
+                    WHERE
+                        post.uid = :uid
+                        AND thread.topicId IS NOT NULL
+                        $where
+                    ORDER BY thread.lastPostDate DESC
+                ) AS post2
+                LEFT JOIN sd_discuss_post_votes AS vote
+            ON post2.id = vote.id
+            GROUP BY post2.id
+            ORDER BY post2.postDate ASC
+            "
+        );
+        $query->execute($params);
+
+        // pass pdo-instance to constructor
+        $query->setFetchMode(\PDO::FETCH_CLASS, get_called_class(), array($pdo));
+        $posts = $query->fetchAll();
+
+        return $posts;
+    }
+    // }}}
     // {{{ loadByUserLastViewed()
     /**
      * @brief loadByUserLastViewed
@@ -192,6 +245,66 @@ class Post extends \Depage\Entity\Entity
     }
     // }}}
 
+    // {{{ countByTopic()
+    /**
+     * @brief countByTopic
+     *
+     * @param mixed $
+     * @return void
+     **/
+    public static function countByTopic($pdo, $topicId)
+    {
+        $params = [
+            "topicId" => $topicId,
+        ];
+
+        $query = $pdo->prepare(
+            "SELECT
+                COUNT(post.id)
+            FROM
+                {$pdo->prefix}_discuss_posts AS post,
+                {$pdo->prefix}_discuss_threads AS thread
+            WHERE post.threadId = thread.id AND thread.topicId = :topicId
+            "
+        );
+        $query->execute($params);
+
+        $count = $query->fetchColumn();
+
+        return $count;
+
+    }
+    // }}}
+    // {{{ countByThread()
+    /**
+     * @brief countByThread
+     *
+     * @param mixed $
+     * @return void
+     **/
+    public static function countByThread($pdo, $threadId)
+    {
+        $params = [
+            "threadId" => $threadId,
+        ];
+
+        $query = $pdo->prepare(
+            "SELECT
+                COUNT(*)
+            FROM
+                {$pdo->prefix}_discuss_posts AS post
+            WHERE post.threadId = :threadId
+            "
+        );
+        $query->execute($params);
+
+        $count = $query->fetchColumn();
+
+        return $count;
+
+    }
+    // }}}
+
     // {{{ setPost()
     /**
      * @brief setPost
@@ -209,52 +322,21 @@ class Post extends \Depage\Entity\Entity
         $this->dirty['post'] = true;
     }
     // }}}
-    // {{{ notify()
+    // {{{ setVisible()
     /**
-     * @brief notify
+     * @brief setVisible
      *
-     * @param mixed $isNew
+     * @param mixed $value
      * @return void
      **/
-    public function notify($isNew)
+    protected function setVisible($value)
     {
-        if ($isNew) {
-            $mentions = $this->getMentions();
-            foreach($mentions as $username) {
-                try {
-                    $user = \Depage\Auth\User::loadByUsername($this->pdo, $username);
-                    // @todo notify user but only if not post owner
-                } catch (\Exception $e) {
-                }
-            }
-        }
+        $this->data['visible'] = (int) $value;
+        $this->dirty['visible'] = true;
+
+        return $this;
     }
     // }}}
-    // {{{ getMentions()
-    /**
-     * @brief getMentions
-     *
-     * @param mixed
-     * @return void
-     **/
-    public function getMentions()
-    {
-        $users = [];
-        $text = strip_tags(str_replace("<", " <", $this->post));
-        echo($text);
-
-        $count = preg_match_all("/@([_a-zA-Z0-9]+)/", $text, $matches);
-
-        if ($count > 0) {
-            foreach($matches[1] as $username) {
-                $users[$username] = true;
-            }
-        }
-
-        return array_keys($users);
-    }
-    // }}}
-
     // {{{ save()
     /**
      * save a notification object
@@ -301,8 +383,6 @@ class Post extends \Depage\Entity\Entity
             if ($success) {
                 $this->dirty = array_fill_keys(array_keys(static::$fields), false);
             }
-
-            $this->notify($isNew);
         }
     }
     // }}}
