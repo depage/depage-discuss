@@ -47,6 +47,11 @@ class Thread extends \Depage\Entity\Entity
     static public $voteTable = "_discuss_thread_votes";
 
     /**
+     * @brief seconds before a user is notified again for the same thread
+     **/
+    const NOTIFICATION_INTERVAL = 21600;
+
+    /**
      * @brief pdo object for database access
      **/
     protected $pdo = null;
@@ -270,62 +275,143 @@ class Thread extends \Depage\Entity\Entity
      * @param mixed
      * @return void
      **/
-    public function loadUsersToNotify($additionalUsers = [])
+    public function loadUsersToNotify($additionalUsers = [], $throttleSeconds = self::NOTIFICATION_INTERVAL)
     {
         $users = [];
-        $union = "";
+
+        $author = \Depage\Auth\CachedUser::loadById($this->pdo, $this->uid);
+        if ($author) {
+            $users[$author->id] = $author;
+        }
+
+        $query = $this->pdo->prepare(
+            "SELECT DISTINCT uid FROM {$this->pdo->prefix}_discuss_posts WHERE threadId = :threadId"
+        );
+        $query->execute([
+            'threadId' => $this->id,
+        ]);
+
+        while ($uid = $query->fetchColumn()) {
+            if (!isset($users[$uid])) {
+                $users[$uid] = \Depage\Auth\CachedUser::loadById($this->pdo, $uid);
+            }
+        }
+
+        foreach ($additionalUsers as $user) {
+            if ($user && !isset($users[$user->id])) {
+                $users[$user->id] = $user;
+            }
+        }
+
+        return $this->filterUsersToNotify($users, $throttleSeconds);
+    }
+    // }}}
+    // {{{ filterUsersToNotify()
+    /**
+     * @brief filters the given users down to those who should be notified
+     *
+     * A user is notified when there is a visible post newer than the last
+     * viewed post and the notification throttle has expired. Opening the thread
+     * after the last notification resets the throttle.
+     *
+     * @param mixed $users
+     * @param mixed $throttleSeconds
+     * @return void
+     **/
+    public function filterUsersToNotify($users, $throttleSeconds = self::NOTIFICATION_INTERVAL)
+    {
+        $usersById = [];
+        foreach ($users as $user) {
+            if ($user && !empty($user->id)) {
+                $usersById[$user->id] = $user;
+            }
+        }
+
+        if (count($usersById) === 0) {
+            return [];
+        }
 
         $params = [
             "threadId1" => $this->id,
             "threadId2" => $this->id,
-            "threadId3" => $this->id,
-            "threadId4" => $this->id,
+            "notificationCutoff" => date("Y-m-d H:i:s", time() - $throttleSeconds),
         ];
+
+        $selects = [];
         $i = 0;
-        foreach ($additionalUsers as $u) {
+        foreach ($usersById as $user) {
             $i++;
-            $params["uId$i"] = $u->id;
-            $union .= " UNION DISTINCT SELECT :uId$i";
+            $params["uid$i"] = $user->id;
+            $selects[] = "SELECT :uid$i AS uid";
         }
 
-
         $query = $this->pdo->prepare(
-            "SELECT threadUserViews.uid FROM
-                (SELECT views.* FROM
-                    (SELECT
-                        thread.uid
-                    FROM
-                        {$this->pdo->prefix}_discuss_threads AS thread
-                    WHERE thread.id = :threadId1
-                    UNION DISTINCT
-                    SELECT
-                        post.uid
-                    FROM
-                        {$this->pdo->prefix}_discuss_posts AS post
-                    WHERE post.threadId = :threadId2
-                    {$union}
-                    ) AS uids
-                INNER JOIN
-                    {$this->pdo->prefix}_discuss_thread_views as views
-                    ON uids.uid = views.uid
-                WHERE views.threadId = :threadId3
-                ) AS threadUserViews
-            JOIN
-                {$this->pdo->prefix}_discuss_posts AS post2
-                ON threadUserViews.threadId = post2.threadId
-            WHERE postDate > viewDate
-                AND post2.threadId = :threadId4
-            GROUP BY threadUserViews.uid
-            HAVING COUNT(post2.threadId) = 1
+            "SELECT u.uid
+            FROM (
+                " . implode(" UNION ALL ", $selects) . "
+            ) AS u
+            LEFT JOIN {$this->pdo->prefix}_discuss_thread_views AS views
+                ON u.uid = views.uid AND views.threadId = :threadId1
+            LEFT JOIN {$this->pdo->prefix}_discuss_posts AS lastViewed
+                ON lastViewed.id = views.postId
+            WHERE EXISTS (
+                SELECT 1
+                FROM {$this->pdo->prefix}_discuss_posts AS unseen
+                WHERE unseen.threadId = :threadId2
+                    AND unseen.visible = 1
+                    AND unseen.postDate > COALESCE(lastViewed.postDate, '1970-01-02 00:00:00')
+            )
+            AND (
+                views.notificationDate IS NULL
+                OR views.viewDate >= views.notificationDate
+                OR views.notificationDate < :notificationCutoff
+            )
             "
         );
         $query->execute($params);
 
+        $result = [];
         while ($uid = $query->fetchColumn()) {
-            $users[$uid] = \Depage\Auth\CachedUser::loadById($this->pdo, $uid);
+            if (isset($usersById[$uid])) {
+                $result[$uid] = $usersById[$uid];
+            }
         }
 
-        return $users;
+        return $result;
+    }
+    // }}}
+    // {{{ markUsersNotified()
+    /**
+     * @brief records that the given users have been notified for this thread
+     *
+     * @param mixed $users
+     * @return void
+     **/
+    public function markUsersNotified($users)
+    {
+        $query = $this->pdo->prepare("
+            INSERT INTO
+                {$this->pdo->prefix}_discuss_thread_views
+            SET
+                uid=:uid,
+                threadId=:threadId,
+                postId=NULL,
+                viewDate='1970-01-02 00:00:00',
+                notificationDate=NOW()
+            ON DUPLICATE KEY UPDATE
+                notificationDate=NOW()
+        ");
+
+        foreach ($users as $user) {
+            if (!$user || empty($user->id)) {
+                continue;
+            }
+
+            $query->execute([
+                'uid' => $user->id,
+                'threadId' => $this->id,
+            ]);
+        }
     }
     // }}}
     // {{{ addPost()
@@ -518,12 +604,16 @@ class Thread extends \Depage\Entity\Entity
         }
 
         $query = $this->pdo->prepare("
-            REPLACE INTO
+            INSERT INTO
                 {$this->pdo->prefix}_discuss_thread_views
             SET
                 uid=:uid,
                 threadId=:threadId,
-                postId=:postId
+                postId=:postId,
+                viewDate=NOW()
+            ON DUPLICATE KEY UPDATE
+                postId=VALUES(postId),
+                viewDate=NOW()
         ");
         return $query->execute([
             'uid' => $user->id,

@@ -27,3 +27,8 @@ ALTER TABLE `_discuss_thread_views` ADD COLUMN `viewDate` timestamp NOT NULL DEF
     @version 1.5.6.8
 */
 ALTER TABLE `_discuss_thread_views` CHANGE COLUMN `postId` `postId` int(11) unsigned;
+
+/*
+    @version 1.5.6.9
+*/
+ALTER TABLE `_discuss_thread_views` ADD COLUMN `notificationDate` timestamp NULL DEFAULT NULL AFTER `viewDate`;
