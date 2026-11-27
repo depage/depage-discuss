@@ -50,6 +50,11 @@ class Thread extends \Depage\Entity\Entity
      * @brief pdo object for database access
      **/
     protected $pdo = null;
+
+    /**
+     * @brief number of posts, when loaded with the thread
+     **/
+    protected $numPosts = null;
     // }}}
 
     // {{{ __construct()
@@ -77,6 +82,10 @@ class Thread extends \Depage\Entity\Entity
     public static function loadByTopic($pdo, $topicId)
     {
         $fields = "thread." . implode(", thread.", self::getFields());
+        $fields .= ", (
+            SELECT COUNT(*) FROM {$pdo->prefix}_discuss_posts AS p
+            WHERE p.threadId = thread.id AND p.visible = 1
+        ) AS numPosts";
         $params = [
             "topicId" => $topicId,
         ];
@@ -91,6 +100,7 @@ class Thread extends \Depage\Entity\Entity
                 LEFT JOIN {$pdo->prefix}" . self::$voteTable . " AS vote
                 ON thread.id = vote.id
             WHERE thread.topicId = :topicId
+                AND thread.visible = 1
             GROUP BY thread.id
             ORDER BY thread.sticky DESC, thread.lastPostDate DESC"
         );
@@ -114,6 +124,10 @@ class Thread extends \Depage\Entity\Entity
     public static function loadById($pdo, $threadId)
     {
         $fields = "thread." . implode(", thread.", self::getFields());
+        $fields .= ", (
+            SELECT COUNT(*) FROM {$pdo->prefix}_discuss_posts AS p
+            WHERE p.threadId = thread.id AND p.visible = 1
+        ) AS numPosts";
         $params = [
             "threadId" => $threadId,
         ];
@@ -151,6 +165,10 @@ class Thread extends \Depage\Entity\Entity
     public static function loadByUser($pdo, $user, $range = null)
     {
         $fields = "thread." . implode(", thread.", self::getFields());
+        $fields .= ", (
+            SELECT COUNT(*) FROM {$pdo->prefix}_discuss_posts AS p
+            WHERE p.threadId = thread.id AND p.visible = 1
+        ) AS numPosts";
         $params = [
             "uid1" => $user->id,
             "uid2" => $user->id,
@@ -172,6 +190,7 @@ class Thread extends \Depage\Entity\Entity
             WHERE
                 (thread.uid = :uid1 OR post.uid = :uid2)
                 AND thread.topicId IS NOT NULL
+                AND thread.visible = 1
                 $where
             GROUP BY thread.id
             ORDER BY thread.lastPostDate DESC"
@@ -204,7 +223,8 @@ class Thread extends \Depage\Entity\Entity
                 COUNT(*)
             FROM
                 {$pdo->prefix}_discuss_threads AS thread
-            WHERE thread.topicId = :topicId"
+            WHERE thread.topicId = :topicId
+                AND thread.visible = 1"
         );
         $query->execute($params);
 
@@ -222,9 +242,23 @@ class Thread extends \Depage\Entity\Entity
      * @param mixed $
      * @return void
      **/
-    public function loadPosts($from, $to)
+    public function loadPosts($from, $to, $order = "ASC")
     {
-        $posts = Post::loadByThread($this->pdo, $this->id, $from, $to);
+        $posts = Post::loadByThread($this->pdo, $this->id, $from, $to, $order);
+
+        return $posts;
+    }
+    // }}}
+    // {{{ loadPostsSince()
+    /**
+     * @brief loadPostsSince
+     *
+     * @param mixed $
+     * @return void
+     **/
+    public function loadPostsSince($postId)
+    {
+        $posts = Post::loadByThreadSince($this->pdo, $this->id, $postId);
 
         return $posts;
     }
@@ -324,6 +358,10 @@ class Thread extends \Depage\Entity\Entity
      **/
     public function getNumPosts()
     {
+        if (!is_null($this->numPosts)) {
+            return (int) $this->numPosts;
+        }
+
         return Post::countByThread($this->pdo, $this->id);
     }
     // }}}
@@ -358,6 +396,23 @@ class Thread extends \Depage\Entity\Entity
     {
         $this->data['visible'] = (int) $value;
         $this->dirty['visible'] = true;
+
+        return $this;
+    }
+    // }}}
+    // {{{ publish()
+    /**
+     * @brief publish
+     *
+     * Makes the thread visible and records the change time.
+     *
+     * @return self
+     **/
+    public function publish(): self
+    {
+        $this->setVisible(true);
+        $this->editDate = date('Y-m-d H:i:s');
+        $this->save();
 
         return $this;
     }

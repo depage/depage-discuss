@@ -38,6 +38,16 @@ class Topic extends \Depage\Entity\Entity
      * @brief pdo object for database access
      **/
     protected $pdo = null;
+
+    /**
+     * @brief number of threads, when loaded with the topic
+     **/
+    protected $numThreads = null;
+
+    /**
+     * @brief number of posts, when loaded with the topic
+     **/
+    protected $numPosts = null;
     // }}}
 
     // {{{ __construct()
@@ -65,12 +75,21 @@ class Topic extends \Depage\Entity\Entity
     public static function loadAll($pdo)
     {
         $fields = "t." . implode(", t.", self::getFields());
+        $fields .= ", (
+            SELECT COUNT(*) FROM {$pdo->prefix}_discuss_threads AS th
+            WHERE th.topicId = t.id AND th.visible = 1
+        ) AS numThreads, (
+            SELECT COUNT(*) FROM {$pdo->prefix}_discuss_posts AS p
+            JOIN {$pdo->prefix}_discuss_threads AS th2 ON p.threadId = th2.id
+            WHERE th2.topicId = t.id AND th2.visible = 1 AND p.visible = 1
+        ) AS numPosts";
         $params = [];
 
         $query = $pdo->prepare(
             "SELECT $fields
             FROM
                 {$pdo->prefix}_discuss_topics AS t
+            WHERE t.visible = 1
             ORDER BY t.pos"
         );
         $query->execute($params);
@@ -152,6 +171,10 @@ class Topic extends \Depage\Entity\Entity
      **/
     public function getNumThreads()
     {
+        if (!is_null($this->numThreads)) {
+            return (int) $this->numThreads;
+        }
+
         return Thread::countByTopic($this->pdo, $this->id);
     }
     // }}}
@@ -164,6 +187,10 @@ class Topic extends \Depage\Entity\Entity
      **/
     public function getNumPosts()
     {
+        if (!is_null($this->numPosts)) {
+            return (int) $this->numPosts;
+        }
+
         return Post::countByTopic($this->pdo, $this->id);
     }
     // }}}

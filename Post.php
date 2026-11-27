@@ -71,12 +71,16 @@ class Post extends \Depage\Entity\Entity
      * @param mixed $
      * @return void
      **/
-    public static function loadByThread($pdo, $threadId, $from = null, $to = null)
+    public static function loadByThread($pdo, $threadId, $from = null, $to = null, $order = "ASC")
     {
         $fields = "post." . implode(", post.", self::getFields());
-        $params = [
-            "threadId" => $threadId,
-        ];
+
+        $limit = "";
+        if (!is_null($from) && !is_null($to)) {
+            $limit = " LIMIT " . (int) $from . ", " . (int) $to;
+        }
+
+        $order = strtoupper($order) === "DESC" ? "DESC" : "ASC";
 
         $query = $pdo->prepare(
             "SELECT
@@ -88,11 +92,52 @@ class Post extends \Depage\Entity\Entity
                 LEFT JOIN {$pdo->prefix}" . self::$voteTable . " AS vote
             ON post.id = vote.id
             WHERE post.threadId = :threadId
+                AND post.visible = 1
             GROUP BY post.id
-            ORDER BY post.postDate ASC
+            ORDER BY post.postDate $order
+            " . $limit
+        );
+        $query->bindValue("threadId", $threadId, \PDO::PARAM_INT);
+        $query->execute();
+
+        // pass pdo-instance to constructor
+        $query->setFetchMode(\PDO::FETCH_CLASS, get_called_class(), array($pdo));
+        $posts = $query->fetchAll();
+
+        return $posts;
+
+    }
+    // }}}
+    // {{{ loadByThreadSince()
+    /**
+     * @brief loadByThreadSince
+     *
+     * @param mixed $
+     * @return void
+     **/
+    public static function loadByThreadSince($pdo, $threadId, $postId)
+    {
+        $fields = "post." . implode(", post.", self::getFields());
+
+        $query = $pdo->prepare(
+            "SELECT
+                $fields,
+                IFNULL(SUM(vote.upvote), 0) AS upvotes,
+                IFNULL(SUM(vote.downvote), 0) AS downvotes
+            FROM
+                {$pdo->prefix}_discuss_posts AS post
+                LEFT JOIN {$pdo->prefix}" . self::$voteTable . " AS vote
+            ON post.id = vote.id
+            WHERE post.threadId = :threadId
+                AND post.visible = 1
+                AND post.id > :postId
+            GROUP BY post.id
+            ORDER BY post.id ASC
             "
         );
-        $query->execute($params);
+        $query->bindValue("threadId", $threadId, \PDO::PARAM_INT);
+        $query->bindValue("postId", $postId, \PDO::PARAM_INT);
+        $query->execute();
 
         // pass pdo-instance to constructor
         $query->setFetchMode(\PDO::FETCH_CLASS, get_called_class(), array($pdo));
@@ -168,16 +213,17 @@ class Post extends \Depage\Entity\Entity
             FROM
                 (SELECT post.*
                     FROM
-                    sd_discuss_posts AS post
-                        JOIN sd_discuss_threads AS thread
+                    {$pdo->prefix}_discuss_posts AS post
+                        JOIN {$pdo->prefix}_discuss_threads AS thread
                             ON thread.id = post.threadId
                     WHERE
                         post.uid = :uid
+                        AND post.visible = 1
                         AND thread.topicId IS NOT NULL
                         $where
                     ORDER BY thread.lastPostDate DESC
                 ) AS post2
-                LEFT JOIN sd_discuss_post_votes AS vote
+                LEFT JOIN {$pdo->prefix}_discuss_post_votes AS vote
             ON post2.id = vote.id
             GROUP BY post2.id
             ORDER BY post2.postDate ASC
@@ -265,6 +311,7 @@ class Post extends \Depage\Entity\Entity
                 {$pdo->prefix}_discuss_posts AS post,
                 {$pdo->prefix}_discuss_threads AS thread
             WHERE post.threadId = thread.id AND thread.topicId = :topicId
+                AND post.visible = 1 AND thread.visible = 1
             "
         );
         $query->execute($params);
@@ -294,6 +341,7 @@ class Post extends \Depage\Entity\Entity
             FROM
                 {$pdo->prefix}_discuss_posts AS post
             WHERE post.threadId = :threadId
+                AND post.visible = 1
             "
         );
         $query->execute($params);
